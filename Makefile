@@ -1,6 +1,6 @@
 include ./Makefile.inc
 
-all: server client
+all: main server client
 
 main:
 	$(CC) -o main main.c
