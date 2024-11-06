@@ -25,7 +25,6 @@ $(CLIENT_OUTPUT_FILE): $(CLIENT_OBJECTS)
 	mkdir -p $(OUTPUT_FOLDER)
 	$(COMPILER) $(CFLAGS) $(CLIENT_OBJECTS) -o $(CLIENT_OUTPUT_FILE)
 
-# Pattern rule to create object files
 $(OBJECTS_FOLDER)/server/%.o: src/server/%.c
 	mkdir -p $(OBJECTS_FOLDER)/server
 	$(COMPILER) $(CFLAGS) -c $< -o $@

@@ -11,7 +11,12 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
+#include "echoServer.h"
+
 #include "selector.h"
+
+#define DEFAULT_PORT 1080
+#define MAX_PENDING_CONNECTION_REQUESTS 5
 
 static bool done = false;
 
@@ -22,11 +27,14 @@ sigterm_handler(const int signal) {
 }
 
 int main(const int argc, const char **argv) {
-  unsigned port = 1080;
+  setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stderr, NULL, _IONBF, 0);
 
-  if(argc == 1) {
-    // utilizamos el default
-  } else if(argc == 2) {
+  //--------------------------Setear numero de puerto en base a stdin-----------------
+  unsigned port;
+  if(argc == 1)
+    port = DEFAULT_PORT;
+  else if(argc == 2) {
     char * end     = 0;
     const long sl = strtol(argv[1], &end, 10);
 
@@ -42,18 +50,20 @@ int main(const int argc, const char **argv) {
     return 1;
   }
 
-  // no tenemos nada que leer de stdin
+  //--------------------------Cerrar stdin porque no hay nada para leer------------------
   close(0);
 
-  const char       *err_msg = NULL;
 
-  struct sockaddr_in addr;
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family      = AF_INET;
-  addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  addr.sin_port        = htons(port);
+  const char * err_msg = NULL;
 
-  const int server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  //--------------------------Defino estructura para el socket para soportar IPv6--------
+  struct sockaddr_in6 addr = {0};
+  addr.sin6_family      = AF_INET6;
+  addr.sin6_port        = htons(port);
+  addr.sin6_addr = in6addr_any;
+
+  //-------------------------Abro socket y consigo el fd---------------------------------
+  const int server = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
   if(server < 0) {
     err_msg = "unable to create socket";
     goto finally;
@@ -62,14 +72,15 @@ int main(const int argc, const char **argv) {
   fprintf(stdout, "Listening on TCP port %d\n", port);
 
   // man 7 ip. no importa reportar nada si falla.
-  setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
+  // setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
 
+  //-------------------------Bindeo el socket con la estructura creada-------------------
   if(bind(server, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
     err_msg = "unable to bind socket";
     goto finally;
   }
 
-  if (listen(server, 20) < 0) {
+  if (listen(server, MAX_PENDING_CONNECTION_REQUESTS) < 0) {
     err_msg = "unable to listen";
     goto finally;
   }
@@ -79,6 +90,27 @@ int main(const int argc, const char **argv) {
   signal(SIGTERM, sigterm_handler);
   signal(SIGINT,  sigterm_handler);
 
+  while (!done) {
+    printf("Listening for next client...\n");
+    struct sockaddr_storage clientAddress;
+    socklen_t clientAddressLen = sizeof(clientAddress);
+    const int clientHandleSocket = accept(server, (struct sockaddr*)&clientAddress, &clientAddressLen);
+    if (clientHandleSocket < 0) {
+      err_msg = "unable to accept client";
+      goto finally;
+    }
+    printf("Client connected\n");
+
+    handleEchoClient(clientHandleSocket);
+
+    printf("Client disconnected\n");
+  }
+
   finally:
+    close(server);
+    if(err_msg!=NULL){
+      fprintf(stderr, "%s\n", err_msg);
+      return -1;
+    }
     return 0;
 }
