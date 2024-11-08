@@ -72,7 +72,7 @@ int main(const int argc, const char **argv) {
   fprintf(stdout, "Listening on TCP port %d\n", port);
 
   // man 7 ip. no importa reportar nada si falla.
-  // setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
+  setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
 
   //-------------------------Bindeo el socket con la estructura creada-------------------
   if(bind(server, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
