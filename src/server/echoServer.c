@@ -11,13 +11,13 @@
 #define READ_BUFFER_SIZE 8192
 #define MAX_HOSTNAME_LENGTH 255
 
-#define ATTACHMENT(key) ((struct buffer *)key->data)
+#define ATTACHMENT(key) ((struct buffer *)(key->data))
 
 static void echo_read(struct selector_key* key);
 static void echo_write(struct selector_key* key);
 static void echo_block(struct selector_key* key);
 static void echo_close(struct selector_key* key);
-static const struct fd_handler echo_handler = {
+static const fd_handler echo_handler = {
     .handle_read = echo_read,
     .handle_write = echo_write,
     .handle_close = echo_block,
