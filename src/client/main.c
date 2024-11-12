@@ -17,7 +17,6 @@
 int main(int argc, char const* argv[]){
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
-    int server_fd;
     if (argc != 3) {
         printf("invalid argument count");
         return -1;

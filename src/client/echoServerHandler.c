@@ -14,8 +14,9 @@ int handleEchoServer(const int serverFd) {
     ssize_t size_input;
     while ((size_input = read(STDIN_FILENO, bufferToWrite, sizeof(bufferToWrite))) != 0) {
         const ssize_t bytesWritten = send(serverFd, bufferToWrite, size_input, 0);
-        if (bytesWritten < 0) {
-            perror("send");
+        if (bytesWritten < 0 || bytesWritten != size_input) {
+            printf("send");
+            close(serverFd);
             return -1;
         }
         ssize_t bytesRead = recv(serverFd, bufferToRead, READ_BUFFER_SIZE, 0);
