@@ -10,13 +10,14 @@
 #define READ_BUFFER_SIZE 2048
 #define MAX_HOSTNAME_LENGTH 255
 
-/*
 //TODO
+/* declaración forward de los handlers de selección de una conexión
+ * establecida entre un cliente y el proxy.
+ */
 static void socksv5_read   (struct selector_key *key);
 static void socksv5_write  (struct selector_key *key);
 static void socksv5_block  (struct selector_key *key);
 static void socksv5_close  (struct selector_key *key);
-
 static const struct fd_handler echo_handler = {
   .handle_read   = socksv5_read,
   .handle_write  = socksv5_write,
@@ -32,6 +33,7 @@ void pool_destroy(void) {
     free(s);
   }
 }
+
 
 
 void passive_accept(struct selector_key * key) {
@@ -70,8 +72,6 @@ void passive_accept(struct selector_key * key) {
       }
   socks5_destroy(state);
 }
-
-*/
 
 int handleEchoClient(const int clientFd)
 {
