@@ -20,8 +20,8 @@ static void echo_close(struct selector_key* key);
 static const struct fd_handler echo_handler = {
     .handle_read = echo_read,
     .handle_write = echo_write,
-    .handle_close = echo_block,
-    .handle_block = echo_close,
+    .handle_close = echo_close,
+    .handle_block = echo_block,
 };
 
 void passive_accept(struct selector_key* key)
