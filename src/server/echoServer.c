@@ -3,7 +3,7 @@
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+
 
 #include "buffer.h"
 #include "selector.h"
@@ -11,7 +11,7 @@
 #define READ_BUFFER_SIZE 8192
 #define MAX_HOSTNAME_LENGTH 255
 
-#define ATTACHMENT(key) ((struct buffer *)(key->data))
+#define ATTACHMENT(key) ((buffer *)(key->data))
 
 static void echo_read(struct selector_key* key);
 static void echo_write(struct selector_key* key);
@@ -28,7 +28,6 @@ void passive_accept(struct selector_key* key)
 {
     struct sockaddr_storage client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
-    struct socks5* state = NULL;
 
     const int client = accept(key->fd, (struct sockaddr*)&client_addr,
                               &client_addr_len);

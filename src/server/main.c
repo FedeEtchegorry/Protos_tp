@@ -177,9 +177,8 @@ int main(const int argc, const char** argv)
         printf("Client disconnected\n");
     }
     */
-finally:
     int ret = 0;
-
+finally:
     if(ss != SELECTOR_SUCCESS) {
         fprintf(stderr, "%s: %s\n", (err_msg == NULL) ? "": err_msg,
                                   ss == SELECTOR_IO
@@ -194,8 +193,6 @@ finally:
         selector_destroy(selector);
     }
     selector_close();
-
-    pool_destroy();
 
     if(server >= 0)
         close(server);
