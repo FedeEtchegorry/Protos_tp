@@ -17,7 +17,7 @@
 static void echo_read(struct selector_key* key);
 static void echo_write(struct selector_key* key);
 static void echo_block(struct selector_key* key);
-static void echo_close(const struct selector_key* key);
+static void echo_close(struct selector_key* key);
 static const fd_handler echo_handler = {
     .handle_read = echo_read,
     .handle_write = echo_write,
@@ -27,7 +27,7 @@ static const fd_handler echo_handler = {
 
 
 //------------------------------Passive Socket--------------------------------------------------------
-void passive_accept(const struct selector_key* key) {
+void passive_accept(struct selector_key* key) {
     struct sockaddr_storage client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
 
@@ -93,7 +93,7 @@ static void echo_block(struct selector_key* key) {
     //unnecessary
 }
 
-static void echo_close(const struct selector_key* key) {
+static void echo_close(struct selector_key* key) {
     buffer* bufferData = ATTACHMENT(key);
     free(bufferData->data);
     free(bufferData);
