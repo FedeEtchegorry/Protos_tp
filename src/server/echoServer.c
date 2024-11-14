@@ -60,57 +60,48 @@ fail:
     }
 }
 
-static void echo_read(struct selector_key* key)
-{
+static void echo_read(struct selector_key* key) {
+    buffer * bufferData = ATTACHMENT(key);
+    size_t size;
+    uint8_t * writePointer = buffer_write_ptr(bufferData, &size);
 
+    const ssize_t written = recv(key->fd, writePointer, size, 0);
+    buffer_write_adv(bufferData, written);
+
+    fd_interest interest = OP_NOOP;
+    interest = interest | OP_WRITE;
+    if(buffer_can_write(bufferData))
+        interest = interest | OP_READ;
+
+    selector_set_interest_key(key, interest);
 }
 
-static void echo_write(struct selector_key* key)
-{
+static void echo_write(struct selector_key* key) {
+    buffer * bufferData = ATTACHMENT(key);
+    size_t size;
+    uint8_t * readPointer = buffer_read_ptr(bufferData, &size);
 
+    const ssize_t written = send(key->fd, readPointer, size, 0);
+    buffer_read_adv(bufferData, written);
+
+    fd_interest interest = OP_NOOP;
+    interest = interest | OP_READ;
+    if(buffer_can_read(bufferData))
+        interest = interest | OP_WRITE;
+
+    selector_set_interest_key(key, interest);
 }
 
-static void echo_block(struct selector_key* key)
-{
-
+static void echo_block(struct selector_key* key) {
+    //unnecessary
 }
 
-static void echo_close(struct selector_key* key)
-{
-
+static void echo_close(struct selector_key* key) {
+    buffer * bufferData = ATTACHMENT(key);
+    free(bufferData->data);
+    free(bufferData);
+    selector_unregister_fd(key->s, key->fd);
+    close(key->fd);
 }
 
-int handleEchoClient(const int clientFd)
-{
-    char buffer[READ_BUFFER_SIZE];
-    ssize_t bytesRead = recv(clientFd, buffer, READ_BUFFER_SIZE, 0);
-    if (bytesRead < 0)
-    {
-        perror("recv");
-        return -1;
-    }
 
-    while (bytesRead > 0)
-    {
-        const ssize_t bytesWritten = send(clientFd, buffer, bytesRead, 0);
-        if (bytesWritten < 0)
-        {
-            perror("send");
-            return -1;
-        }
-        if (bytesWritten != bytesRead)
-        {
-            perror("send");
-            return -1;
-        }
-        bytesRead = recv(clientFd, buffer, READ_BUFFER_SIZE, 0);
-        if (bytesRead < 0)
-        {
-            perror("recv");
-            return -1;
-        }
-    }
-
-    close(clientFd);
-    return 0;
-}
