@@ -218,8 +218,8 @@ hello_read_init(const unsigned state, struct selector_key *key) {
     d->rb                              = &(ATTACHMENT(key)->read_buffer);
     d->wb                              = &(ATTACHMENT(key)->write_buffer);
     d->parser.data                     = &d->method;
-    d->parser.on_authentication_method = on_hello_method, hello_parser_init(
-            &d->parser);
+    d->parser.on_authentication_method = on_hello_method;
+    hello_parser_init(&d->parser);
 }
 
 static unsigned

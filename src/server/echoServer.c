@@ -8,7 +8,7 @@
 #include "buffer.h"
 #include "selector.h"
 
-#define READ_BUFFER_SIZE 8192
+#define BUFFER_SIZE 8192
 #define MAX_HOSTNAME_LENGTH 255
 #define ATTACHMENT(key) ((buffer *)(key->data))
 
@@ -42,8 +42,8 @@ void passive_accept(struct selector_key* key) {
     }
 
     buffer* buffer = malloc(sizeof(struct buffer));
-    uint8_t* data = malloc(READ_BUFFER_SIZE);
-    buffer_init(buffer, READ_BUFFER_SIZE, data);
+    uint8_t* data = malloc(BUFFER_SIZE);
+    buffer_init(buffer, BUFFER_SIZE, data);
 
     if (SELECTOR_SUCCESS != selector_register(key->s, client, &echo_handler, OP_READ, buffer)) {
         goto fail;

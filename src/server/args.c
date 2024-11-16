@@ -44,25 +44,29 @@ version(void) {
                     "AQUI VA LA LICENCIA\n");
 }
 
+/* Estructura de la carpeta para el argumento -d:
+$ tree .
+.
+└── user1
+    ├── cur
+    ├── new
+    │   └── mail1
+    └── tmp
+*/
 static void
 usage(const char *progname) {
     fprintf(stderr,
         "Usage: %s [OPTION]...\n"
         "\n"
         "   -h               Imprime la ayuda y termina.\n"
-        "   -l <SOCKS addr>  Dirección donde servirá el proxy SOCKS.\n"
+        "   -l <POP3 addr>   Dirección donde servirá el servidor POP.\n"
         "   -L <conf  addr>  Dirección donde servirá el servicio de management.\n"
-        "   -p <SOCKS port>  Puerto entrante conexiones SOCKS.\n"
+        "   -p <POP3 port>   Puerto entrante conexiones POP3.\n"
         "   -P <conf port>   Puerto entrante conexiones configuracion\n"
-        "   -u <name>:<pass> Usuario y contraseña de usuario que puede usar el proxy. Hasta 10.\n"
+        "   -u <name>:<pass> Usuario y contraseña de usuario que puede usar el servidor. Hasta 10.\n"
         "   -v               Imprime información sobre la versión versión y termina.\n"
-        "\n"
-        "   --doh-ip    <ip>    \n"
-        "   --doh-port  <port>  XXX\n"
-        "   --doh-host  <host>  XXX\n"
-        "   --doh-path  <host>  XXX\n"
-        "   --doh-query <host>  XXX\n"
-
+        "   -d <dir>         Carpeta donde residen los Maildirs"
+        "   -t <cmd>         Comando para aplicar transformaciones"
         "\n",
         progname);
     exit(1);
