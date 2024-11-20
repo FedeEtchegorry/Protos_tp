@@ -11,7 +11,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-#include "echoServer.h"
+#include "POP3Server.h"
 
 #include "selector.h"
 
@@ -135,7 +135,7 @@ int main(const int argc, const char** argv)
 
     //-----------------------------Registro a mi socket pasivo para que acepte conexiones---------------------
     const fd_handler passive_socket = {
-        .handle_read = passive_accept,
+        .handle_read = pop3_passive_accept,
         .handle_write = NULL,
         .handle_close = NULL,
     };
@@ -158,25 +158,6 @@ int main(const int argc, const char** argv)
     if(err_msg == NULL)
         err_msg = "closing";
 
-
-    /*
-    while (!done) {
-        printf("Listening for next client...\n");
-        struct sockaddr_storage clientAddress;
-        socklen_t clientAddressLen = sizeof(clientAddress);
-        const int clientHandleSocket = accept(server, (struct sockaddr*)&clientAddress, &clientAddressLen);
-        if (clientHandleSocket < 0)
-        {
-            err_msg = "unable to accept client";
-            goto finally;
-        }
-        printf("Client connected\n");
-
-        handleEchoClient(clientHandleSocket);
-
-        printf("Client disconnected\n");
-    }
-    */
     int ret = 0;
 finally:
     if(ss != SELECTOR_SUCCESS) {

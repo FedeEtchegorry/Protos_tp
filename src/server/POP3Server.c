@@ -9,99 +9,34 @@
 
 #include "buffer.h"
 #include "stm.h"
-#include "parser.h"
+#include "pop3Parser.h"
+#include "greetings.h"
+#include "auth.h"
 
 #define BUFFER_SIZE 8192
 #define MAX_HOSTNAME_LENGTH 255
-
-//---------------------------------------------POP3 States-----------------------------------------------------
-enum pop3_state {
-    /* Reads and processes the client authentication.
-    Interests:
-        - OP_READ -> client_fd
-    Transitions:
-        - AUTH_READ if the message was not completely read
-        - AUTH_WRITE when the message is completely read
-        - ERROR if an error occurs (IO/parsing) */
-    GREETINGS,
-    /* Reads and processes the client authentication.
-    Interests:
-        - OP_READ -> client_fd
-    Transitions:
-        - AUTH_READ if the message was not completely read
-        - AUTH_WRITE when the message is completely read
-        - ERROR if an error occurs (IO/parsing) */
-    USER_READ,
-
-    /* Reads and processes the client authentication.
-    Interests:
-        - OP_READ -> client_fd
-    Transitions:
-        - AUTH_READ if the message was not completely read
-        - AUTH_WRITE when the message is completely read
-        - ERROR if an error occurs (IO/parsing) */
-    USER_WRITE,
-
-    /* Reads and processes the client authentication.
-    Interests:
-        - OP_READ -> client_fd
-    Transitions:
-        - PASS_READ if the message was not completely read
-        - AUTH_WRITE when the message is completely read
-        - ERROR if an error occurs (IO/parsing) */
-    PASS_READ,
-
-    /* Sends the authentication answer to the client
-    Interests:
-       - OP_WRITE -> client_fd
-    Transitions:
-       - AUTH_WRITE if there are bytes to be sended
-       - REQUEST_READ when all the bytes where sended, and the auth provided was valid
-       - ERROR if an error occurs (IO/parsing) */
-    PASS_WRITE,
-
-    /* Reads and processes the client request.
-    Interests:
-        - OP_READ -> client_fd
-    Transitions:
-        - METHOD_READ if the message was not completely read
-        - METHOD_WRITE if there were errors processing the request
-        - ERROR if an error occurs (IO/parsing) */
-    METHOD_READ,
-
-    /* Sends the request answer to the client
-    Interests:
-        - OP_WRITE -> client_fd
-    Transitions:
-        - METHOD_WRITE if there are bytes to be sended
-        - METHOD_READ if the request was successful
-        - ERROR I/O error */
-    METHOD_WRITE,
-
-    // Terminal states
-    DONE,
-    ERROR,
-};
 
 //-------------------------------------Array de estados para la stm------------------------------------------
 static const struct state_definition stateHandlers[] = {
     {
         .state = GREETINGS,
+        .on_arrival = greetingOnArrival,
+        .on_write_ready = greetingOnWriteReady
     },
     {
-        .state = USER_READ,
+        .state = AUTH_USER,
+        .on_arrival = userOnArrival,
+        .on_read_ready = userOnReadReady,
+        .on_write_ready = userOnWriteReady,
     },
     {
-        .state = USER_WRITE
+        .state = AUTH_PASS,
+        .on_arrival = passOnArrival,
+        .on_read_ready = passOnReadReady,
+        .on_write_ready = passOnWriteReady,
     },
     {
-        .state = PASS_READ
-    },
-    {
-        .state = PASS_WRITE
-    },
-    {
-        .state = METHOD_READ
+        .state = METHOD_READ,
     },
     {
         .state = METHOD_WRITE
@@ -115,19 +50,20 @@ static const struct state_definition stateHandlers[] = {
 };
 
 //-----------------------------------Struct to storage relevant info for each client in selectorKey---------------------
-
 clientData* newClientData(const struct sockaddr_storage clientAddress) {
     clientData* clientData = calloc(1, sizeof(struct clientData));
 
-    clientData->stateMachine.initial = USER_READ;
+    clientData->stateMachine.initial = GREETINGS;
     clientData->stateMachine.max_state = ERROR;
     clientData->stateMachine.states = stateHandlers;
     stm_init(&clientData->stateMachine);
 
-    uint8_t * readBuffer = malloc(BUFFER_SIZE);
-    uint8_t * writeBuffer = malloc(BUFFER_SIZE);
+    uint8_t* readBuffer = malloc(BUFFER_SIZE);
+    uint8_t* writeBuffer = malloc(BUFFER_SIZE);
     buffer_init(&clientData->readBuffer, BUFFER_SIZE, readBuffer);
     buffer_init(&clientData->writeBuffer, BUFFER_SIZE, writeBuffer);
+
+    parserInit(&clientData->pop3Parser);
 
     clientData->isAuth = false;
     clientData->clientAddress = clientAddress;
@@ -193,7 +129,7 @@ static const fd_handler pop3_handler = {
 };
 
 //------------------------------Passive Socket--------------------------------------------------------
-void pop3_passive_accept(const struct selector_key* key) {
+void pop3_passive_accept(struct selector_key* key) {
     struct sockaddr_storage client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
 
@@ -207,7 +143,7 @@ void pop3_passive_accept(const struct selector_key* key) {
     }
 
     clientData* clientData = newClientData(client_addr);
-    if (SELECTOR_SUCCESS != selector_register(key->s, client, &pop3_handler, OP_READ, clientData)) {
+    if (SELECTOR_SUCCESS != selector_register(key->s, client, &pop3_handler, OP_WRITE, clientData)) {
         goto fail;
     }
     return;
@@ -217,4 +153,3 @@ fail:
         close(client);
     }
 }
-
