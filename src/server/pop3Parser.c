@@ -71,6 +71,8 @@ bool parserIsFinished(pop3Parser * parser) {
 
 void resetParser(pop3Parser * parser) {
     parser->state = READING;
+    parser->method = UNKNOWN;
+    parser->arg = NULL;
     buffer_reset(&parser->buffer);
 }
 
