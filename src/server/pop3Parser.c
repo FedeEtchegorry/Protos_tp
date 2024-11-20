@@ -38,7 +38,7 @@ static void processBuffer(pop3Parser * parser) {
     else
         parser->method = UNKNOWN;
 
-    parser->arg = argument;
+    parser->arg = strdup(argument);
 }
 
 void parse(pop3Parser * parser, buffer * buffer) {

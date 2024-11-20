@@ -28,11 +28,8 @@ unsigned userOnReadReady(struct selector_key *key) {
         size_t writable;
         uint8_t* writeBuffer = buffer_write_ptr(&data->writeBuffer, &writable);
 
-        char * msg;
-        if(data->pop3Parser.method == USER)
-            msg = SUCCESS;
-        else
-            msg = ERROR;
+
+        char * msg = data->pop3Parser.arg;
 
         memcpy(writeBuffer, msg, strlen(msg));
 
