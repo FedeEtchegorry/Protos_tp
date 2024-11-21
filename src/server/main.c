@@ -38,6 +38,7 @@ int main(const int argc, char** argv) {
     char* err_msg = NULL;
     selector_status ss = SELECTOR_SUCCESS;
     int server = -1;
+    fd_selector selector = NULL;
 
     //--------------------------Defino estructura para el socket para soportar IPv6--------
     struct sockaddr_in6 addr = {0};
@@ -93,7 +94,7 @@ int main(const int argc, char** argv) {
         goto finally;
     }
 
-    const fd_selector selector = selector_new(SELECTOR_SIZE);
+    selector = selector_new(SELECTOR_SIZE);
     if (selector == NULL) {
         err_msg = "unable to create selector";
         goto finally;
@@ -136,7 +137,8 @@ finally:
         ret = 1;
     }
 
-    selector_destroy(selector);
+    if(selector != NULL)
+        selector_destroy(selector);
     selector_close();
     if(server >= 0)
         close(server);
