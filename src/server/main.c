@@ -1,19 +1,16 @@
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
-#include <limits.h>
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <sys/types.h>   // socket
 #include <sys/socket.h>  // socket
 #include <netinet/in.h>
 
 #include "POP3Server.h"
 #include "selector.h"
 #include "args.h"
-#include "auth.h"
+#include "users.h"
 
 #define DEFAULT_PORT 1080
 #define MAX_PENDING_CONNECTION_REQUESTS 5

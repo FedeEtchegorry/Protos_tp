@@ -28,16 +28,10 @@ static const struct state_definition stateHandlers[] = {
         .on_write_ready = greetingOnWriteReady
     },
     {
-        .state = AUTH_USER,
-        .on_arrival = userOnArrival,
-        .on_read_ready = userOnReadReady,
-        .on_write_ready = userOnWriteReady,
-    },
-    {
-        .state = AUTH_PASS,
-        .on_arrival = passOnArrival,
-        .on_read_ready = passOnReadReady,
-        .on_write_ready = passOnWriteReady,
+        .state = AUTHORIZATION,
+        .on_arrival = authOnArrival,
+        .on_read_ready = authOnReadReady,
+        .on_write_ready = authOnWriteReady,
     },
     {
         .state = TRANSACTION
@@ -166,9 +160,16 @@ void writeInBuffer(struct selector_key * key, bool isError, char * msg, long len
     memcpy(writeBuffer, status, strlen(status));
     buffer_write_adv(&data->writeBuffer, strlen(status));
 
+    if (msg != NULL && len > 0) {
+        writeBuffer = buffer_write_ptr(&data->writeBuffer, &writable);
+        memcpy(writeBuffer, msg, len);
+        buffer_write_adv(&data->writeBuffer, len);
+    }
+
+    //TODO escribir el \r\n
     writeBuffer = buffer_write_ptr(&data->writeBuffer, &writable);
-    memcpy(writeBuffer, msg, len);
-    buffer_write_adv(&data->writeBuffer, len);
+    writeBuffer[0] = '\n';
+    buffer_write_adv(&data->writeBuffer, 1);
 }
 
 bool sendFromBuffer(struct selector_key * key) {

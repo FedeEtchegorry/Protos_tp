@@ -27,9 +27,7 @@ typedef struct clientData {
 enum pop3_state {
     GREETINGS,
 
-    AUTH_USER,
-
-    AUTH_PASS,
+    AUTHORIZATION,
 
     TRANSACTION,
 

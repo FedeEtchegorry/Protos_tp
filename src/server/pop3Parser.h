@@ -8,6 +8,7 @@ enum methods {
   PASS,
   LIST,
   RETR,
+  QUIT,
   UNKNOWN
 };
 

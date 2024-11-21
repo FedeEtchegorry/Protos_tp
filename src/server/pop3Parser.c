@@ -1,5 +1,6 @@
 #include "pop3Parser.h"
 
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -25,6 +26,8 @@ static void processBuffer(pop3Parser * parser) {
     buffer[bytesRead - 2] = '\0'; // Eliminar \r\n
 
     char *command = strtok(buffer, " ");
+    for (int i = 0; i < strlen(command); i++)
+        command[i] = toupper(command[i]);
     char *argument = strtok(NULL, " ");
 
     if(strcmp(command, "USER") == 0)
@@ -38,7 +41,8 @@ static void processBuffer(pop3Parser * parser) {
     else
         parser->method = UNKNOWN;
 
-    parser->arg = strdup(argument);
+    if (argument != NULL)
+        parser->arg = strdup(argument);
 }
 
 void parse(pop3Parser * parser, buffer * buffer) {
@@ -76,5 +80,8 @@ void resetParser(pop3Parser * parser) {
     buffer_reset(&parser->buffer);
 }
 
+void parserDestroy(pop3Parser * parser) {
+	free(parser->arg);
+}
 
 

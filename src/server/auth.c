@@ -1,138 +1,111 @@
 #include "auth.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "POP3Server.h"
-#include "buffer.h"
+#include "users.h"
 
-#define VALID_USER "Valid user\n"
-#define INVALID_USER "Invalid user\n"
-#define VALID_PASS "Valid password\n"
-#define INVALID_PASS "Invalid password\n"
-#define INVALID_METHOD "Invalid method\n"
-
-static int getIndexOf(const char* username);
+#define VALID_USER "Valid user"
+#define AUTH_FAILED "Authentication failed"
+#define AUTH_SUCCESS "Logged in successfully"
+#define NO_USERNAME "No username given"
+#define INVALID_METHOD "Invalid method"
 
 //---------------------------------Private definitions-------------------------------
-#define USERS_MAX_USERNAME_LENGTH 255
-#define USERS_MAX_PASSWORD_LENGTH 255
-#define MAX_USERS 10
+static char * currentUsername = NULL;
+static char * currentPassword = NULL;
 
-typedef struct {
-    char username[USERS_MAX_USERNAME_LENGTH + 1];
-    char password[USERS_MAX_PASSWORD_LENGTH + 1];
-} user;
+static unsigned handleUsername(struct selector_key* key) {
+    clientData* data = ATTACHMENT(key);
+    const char* username = data->pop3Parser.arg;
+    if (username == NULL)
+        username = "";
 
-static user users[MAX_USERS];
-static int usersCount = 0;
+    currentUsername = strdup(username);
 
-static user currentUser;
+    writeInBuffer(key, false, NULL, 0);
+    selector_set_interest_key(key, OP_WRITE);
+    return AUTHORIZATION;
+}
+
+static unsigned handlePassword(struct selector_key* key) {
+    clientData* data = ATTACHMENT(key);
+    if (currentUsername == NULL) {
+        writeInBuffer(key, true, NO_USERNAME, sizeof(NO_USERNAME)-1);
+        selector_set_interest_key(key, OP_WRITE);
+        return AUTHORIZATION;
+    }
+
+    const char* password = data->pop3Parser.arg;
+    if(password == NULL)
+        password = "";
+
+    currentUsername = strdup(password);
+
+    if(!userLogin(currentUsername, currentPassword)) {
+        writeInBuffer(key, true, AUTH_FAILED, sizeof(AUTH_FAILED)-1);
+        selector_set_interest_key(key, OP_WRITE);
+        return AUTHORIZATION;
+    }
+
+    data->isAuth = true;
+    writeInBuffer(key, false, AUTH_SUCCESS, sizeof(AUTH_SUCCESS) - 1);
+    selector_set_interest_key(key, OP_WRITE);
+    return AUTHORIZATION;
+}
+
+static unsigned handleQuit(struct selector_key* key) {
+    //TODO
+}
+
+static unsigned handleUnknown(struct selector_key* key) {
+    writeInBuffer(key, true, INVALID_METHOD, sizeof(INVALID_METHOD) - 1);
+    selector_set_interest_key(key, OP_WRITE);
+    return AUTHORIZATION;
+}
 
 //----------------------------------USER Handlers------------------------------------
-void userOnArrival(const unsigned state, struct selector_key* key) {
+void authOnArrival(const unsigned state, struct selector_key* key) {
+    printf("Entre a authorization\n");
     clientData* data = ATTACHMENT(key);
     resetParser(&data->pop3Parser);
     selector_set_interest_key(key, OP_READ);
 }
 
-unsigned userOnReadReady(struct selector_key* key) {
-    clientData* data = ATTACHMENT(key);
+unsigned authOnReadReady(struct selector_key* key) {
     if (readAndParse(key)) {
-        if(data->pop3Parser.method != USER) {
-            writeInBuffer(key, true, INVALID_METHOD, sizeof(INVALID_METHOD) - 1);
-            selector_set_interest_key(key, OP_WRITE);
-            return AUTH_USER;
+        clientData* data = ATTACHMENT(key);
+        switch (data->pop3Parser.method) {
+            case USER:
+                printf("Leo el username: %s\n", data->pop3Parser.arg);
+                return handleUsername(key);
+            case PASS:
+                printf("Leo la contraseña: %s\n", data->pop3Parser.arg);
+                return handlePassword(key);
+            case QUIT:
+                return handleQuit(key);
+            default:
+                printf("Comando descnocido\n");
+                return handleUnknown(key);
         }
-
-        const char* arg = data->pop3Parser.arg;
-        if(arg == NULL || getIndexOf(arg) < 0) {
-            writeInBuffer(key, true, INVALID_USER, sizeof(INVALID_USER) - 1);
-            selector_set_interest_key(key, OP_WRITE);
-            return AUTH_USER;
-        }
-
-        strcpy(currentUser.username, arg);
-
-        writeInBuffer(key, false, VALID_USER, sizeof(VALID_USER) - 1);
-        selector_set_interest_key(key, OP_WRITE);
     }
-
-    return AUTH_USER;
+    return AUTHORIZATION;
 }
 
-unsigned userOnWriteReady(struct selector_key* key) {
+unsigned authOnWriteReady(struct selector_key* key) {
     if (!sendFromBuffer(key))
-        return AUTH_USER;
+        return AUTHORIZATION;
 
-    return AUTH_PASS;
-}
-
-//--------------------------------------PASS Handlers-----------------------------------------------
-void passOnArrival(const unsigned state, struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
+    if (data->isAuth)
+        return TRANSACTION;
+
     resetParser(&data->pop3Parser);
     selector_set_interest_key(key, OP_READ);
-}
-
-unsigned passOnReadReady(struct selector_key* key) {
-    clientData* data = ATTACHMENT(key);
-
-    if (readAndParse(key)) {
-        if(data->pop3Parser.method != PASS) {
-            writeInBuffer(key, true, INVALID_METHOD, sizeof(INVALID_METHOD) - 1);
-            selector_set_interest_key(key, OP_WRITE);
-            return AUTH_USER;
-        }
-
-        const char* arg = data->pop3Parser.arg;
-        if(arg == NULL)
-            return ERROR;
-
-        strcpy(currentUser.password, arg);
-
-        if(!userLogin(currentUser.username, currentUser.password))
-            return AUTH_USER;
-
-        writeInBuffer(key, false, VALID_PASS, sizeof(VALID_PASS) - 1);
-        selector_set_interest_key(key, OP_WRITE);
-    }
-
-    return AUTH_PASS;
-}
-
-unsigned passOnWriteReady(struct selector_key* key) {
-    if (!sendFromBuffer(key))
-        return AUTH_PASS;
-    return TRANSACTION;
-}
-
-//----------------------------------------Private functions-----------------------------------------
-static int getIndexOf(const char* username) {
-    int index = -1;
-    bool found = false;
-    for(int i=0; i < usersCount && !found; i++) {
-        if(strcmp(username, users[i].username) == 0) {
-            index = i;
-            found = true;
-        }
-    }
-    return index;
+    printf("Reseteo el parser y vuelvo a authorization\n");
+    return AUTHORIZATION;
 }
 
 
-//---------------------------------------Public functions--------------------------------------------
-void usersCreate(const char* username, const char* password) {
-    if(usersCount >= MAX_USERS)
-        return;
-    strcpy(users[usersCount].username, username);
-    strcpy(users[usersCount].password, password);
-    usersCount++;
-}
-
-bool userLogin(const char* username, const char* password) {
-    int index = getIndexOf(username);
-    if(index == -1 || strcmp(users[index].password, password) != 0)
-        return false;
-    return true;
-}
 
