@@ -1,4 +1,5 @@
 #include "users.h"
+#include <stdio.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +11,7 @@
 typedef struct {
     char username[USERS_MAX_USERNAME_LENGTH + 1];
     char password[USERS_MAX_PASSWORD_LENGTH + 1];
+    unsigned int isAdmin;
 } user;
 
 static user users[MAX_USERS];
@@ -35,11 +37,18 @@ bool userExists(const char* username) {
   return index >= 0;
 }
 
-void usersCreate(const char* username, const char* password) {
-    if(usersCount >= MAX_USERS)
+void usersCreate(const char* username, const char* password, unsigned int isAdmin) {
+    if(usersCount >= MAX_USERS) {
+        fprintf(stderr, "ERROR: Too many users\n");
         return;
+    }
+    if(getIndexOf(username) >= 0) {
+        fprintf(stderr, "WARNING: User '%s' already exists. Please try again with another username.\n", username);
+        return;
+    }
     strcpy(users[usersCount].username, username);
     strcpy(users[usersCount].password, password);
+    users[usersCount].isAdmin = isAdmin;
     usersCount++;
 }
 

@@ -28,6 +28,11 @@ int main(const int argc, char** argv) {
     setvbuf(stderr, NULL, _IONBF, 0);
     close(STDIN_FILENO);
 
+    //-------------------Levantar usuarios ya registrados del archivos users.csv ---------------------
+
+
+
+
     //--------------------------Parsear argumentos por stdin-----------------
     struct pop3Args args;
     parse_args(argc, argv, &args);
@@ -39,7 +44,7 @@ int main(const int argc, char** argv) {
     fd_selector selector = NULL;
 
     for(int i = 0; i < args.nusers; i++)
-        usersCreate(args.users[i].name, args.users[i].pass);
+        usersCreate(args.users[i].name, args.users[i].pass, args.users[i].isAdmin);
 
     //--------------------------Defino estructura para el socket para soportar IPv6--------
     struct sockaddr_in6 addr = {0};
