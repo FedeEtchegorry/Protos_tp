@@ -13,6 +13,7 @@
 #include "pop3Parser.h"
 #include "greetings.h"
 #include "auth.h"
+#include "transaction.h"
 
 #define BUFFER_SIZE 8192
 #define MAX_HOSTNAME_LENGTH 255
@@ -34,7 +35,10 @@ static const struct state_definition stateHandlers[] = {
         .on_write_ready = authOnWriteReady,
     },
     {
-        .state = TRANSACTION
+        .state = TRANSACTION,
+        .on_arrival = transactionOnArrival,
+        .on_read_ready = transactionOnReadReady,
+        .on_write_ready = transactionOnWriteReady,
     },
     {
         .state = DONE

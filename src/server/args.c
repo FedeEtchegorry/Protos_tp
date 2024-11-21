@@ -63,8 +63,8 @@ usage(const char* progname) {
             "   -P <conf port>   Puerto entrante conexiones configuracion\n"
             "   -u <name>:<pass> Usuario y contraseña de usuario que puede usar el servidor. Hasta 10.\n"
             "   -v               Imprime información sobre la versión versión y termina.\n"
-            "   -d <dir>         Carpeta donde residen los Maildirs"
-            "   -t <cmd>         Comando para aplicar transformaciones"
+            "   -d <dir>         Carpeta donde residen los Maildirs\n"
+            "   -t <cmd>         Comando para aplicar transformaciones\n"
             "\n",
             progname);
 }
@@ -80,11 +80,12 @@ parse_args(const int argc, char** argv, struct pop3Args* args) {
     args->mng_addr = "127.0.0.1";
     args->mng_port = 8080;
 
+    args->maildir = NULL;
     args->transformation_enabled = true;
     args->nusers=0;
     //------------------------Parsear argumentos---------------------------------
     while (true) {
-        const int c = getopt(argc, argv, "hl:L:Np:P:u:v");
+        const int c = getopt(argc, argv, "hl:L:t:p:P:u:d:v");
         if (c == -1)
             break;
 

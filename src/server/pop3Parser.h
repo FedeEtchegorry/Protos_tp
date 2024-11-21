@@ -6,14 +6,17 @@
 enum methods {
   USER,
   PASS,
+  STAT,
   LIST,
   RETR,
+  DELE,
+  RSET,
+  NOOP,
   QUIT,
   UNKNOWN
 };
 
 enum state {
-  START,
   READING,
   READY,
 };

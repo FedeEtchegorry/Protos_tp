@@ -10,6 +10,7 @@
 #include "POP3Server.h"
 #include "selector.h"
 #include "args.h"
+#include "transaction.h"
 #include "users.h"
 
 #define DEFAULT_PORT 1080
@@ -41,6 +42,11 @@ int main(const int argc, char** argv) {
     for(int i = 0; i < args.nusers; i++)
         usersCreate(args.users[i].name, args.users[i].pass);
 
+    if (args.maildir == NULL) {
+        err_msg = "No maildir specified";
+        goto finally;
+    }
+    initTransactionModule(args.maildir);
     //--------------------------Defino estructura para el socket para soportar IPv6--------
     struct sockaddr_in6 addr = {0};
     addr.sin6_family = AF_INET6;

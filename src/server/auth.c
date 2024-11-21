@@ -46,6 +46,8 @@ static unsigned handlePassword(struct selector_key* key) {
     if(!userLogin(currentUsername, currentPassword)) {
         writeInBuffer(key, true, AUTH_FAILED, sizeof(AUTH_FAILED)-1);
         selector_set_interest_key(key, OP_WRITE);
+        currentUsername = NULL;
+        currentPassword = NULL;
         return AUTHORIZATION;
     }
 
