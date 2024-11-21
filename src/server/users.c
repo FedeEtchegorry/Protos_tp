@@ -45,7 +45,7 @@ void usersCreate(const char* username, const char* password) {
 
 bool userLogin(const char* username, const char* password) {
     int index = getIndexOf(username);
-    if(index == -1 || strcmp(users[index].password, password) != 0)
+    if(index < 0 || strcmp(users[index].password, password) != 0)
         return false;
     return true;
 }

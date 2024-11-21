@@ -41,7 +41,7 @@ static unsigned handlePassword(struct selector_key* key) {
     if(password == NULL)
         password = "";
 
-    currentUsername = strdup(password);
+    currentPassword = strdup(password);
 
     if(!userLogin(currentUsername, currentPassword)) {
         writeInBuffer(key, true, AUTH_FAILED, sizeof(AUTH_FAILED)-1);
