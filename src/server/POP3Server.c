@@ -166,10 +166,10 @@ void writeInBuffer(struct selector_key * key, bool isError, char * msg, long len
         buffer_write_adv(&data->writeBuffer, len);
     }
 
-    //TODO escribir el \r\n
     writeBuffer = buffer_write_ptr(&data->writeBuffer, &writable);
-    writeBuffer[0] = '\n';
-    buffer_write_adv(&data->writeBuffer, 1);
+    writeBuffer[0] = '\r';
+    writeBuffer[1] = '\n';
+    buffer_write_adv(&data->writeBuffer, 2);
 }
 
 bool sendFromBuffer(struct selector_key * key) {
