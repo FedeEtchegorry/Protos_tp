@@ -25,7 +25,7 @@ static void sigterm_handler(const int signal) {
     done = true;
 }
 
-int main(const int argc, const char** argv) {
+int main(const int argc, char** argv) {
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
     close(STDIN_FILENO);
@@ -34,7 +34,10 @@ int main(const int argc, const char** argv) {
     struct pop3Args args;
     parse_args(argc, argv, &args);
 
-    const char* err_msg = NULL;
+    //Defined here to be used in finally
+    char* err_msg = NULL;
+    selector_status ss = SELECTOR_SUCCESS;
+    int server = -1;
 
     //--------------------------Defino estructura para el socket para soportar IPv6--------
     struct sockaddr_in6 addr = {0};
@@ -46,16 +49,14 @@ int main(const int argc, const char** argv) {
     }
 
     //-------------------------Abro socket y consigo el fd---------------------------------
-    const int server = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+    server = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
     if (server < 0) {
         err_msg = "unable to create socket";
         goto finally;
     }
 
-    fprintf(stdout, "Listening on TCP port %d\n", port);
+    fprintf(stdout, "Listening on TCP port %d\n", args.socks_port);
 
-    //TODO PREGUNTAR PORQUE SE USAN ESTAS FLAGS
-    // man 7 ip. no importa reportar nada si falla.
     setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
 
     //-------------------------Bindeo el socket con la estructura creada-------------------
@@ -105,7 +106,7 @@ int main(const int argc, const char** argv) {
         .handle_close = NULL,
     };
 
-    selector_status ss = selector_register(selector, server, &passive_socket, OP_READ, NULL);
+    ss = selector_register(selector, server, &passive_socket, OP_READ, NULL);
     if (ss != SELECTOR_SUCCESS) {
         err_msg = "registering fd";
         goto finally;
@@ -130,18 +131,14 @@ finally:
                     ? strerror(errno)
                     : selector_error(ss));
         ret = 2;
-    }
-    else if (err_msg) {
+    } else {
         perror(err_msg);
         ret = 1;
     }
 
-    if (selector != NULL)
-        selector_destroy(selector);
-
+    selector_destroy(selector);
     selector_close();
-
-    if (server >= 0)
+    if(server >= 0)
         close(server);
 
     return ret;
