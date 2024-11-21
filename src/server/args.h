@@ -8,6 +8,7 @@
 struct users {
     char *name;
     char *pass;
+    unsigned int isAdmin;
 };
 
 struct pop3Args {

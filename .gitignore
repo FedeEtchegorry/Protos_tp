@@ -1,0 +1,6 @@
+
+/.idea
+/obj
+CMakeLists.txt
+/bin
+users.csv

@@ -17,6 +17,7 @@
 #define MAX_PENDING_CONNECTION_REQUESTS 5
 #define SELECTOR_SIZE 1024
 
+
 static bool done = false;
 
 static void sigterm_handler(const int signal) {
@@ -29,6 +30,13 @@ int main(const int argc, char** argv) {
     setvbuf(stderr, NULL, _IONBF, 0);
     close(STDIN_FILENO);
 
+    //-------------------Levantar usuarios ya registrados del archivos users.csv ---------------------
+
+    if(initializeRegisteredUsers() < 0)
+    {
+        fprintf(stderr, "An error has occurred while fetching registered users.\n");
+    }
+
     //--------------------------Parsear argumentos por stdin-----------------
     struct pop3Args args;
     parse_args(argc, argv, &args);
@@ -40,7 +48,7 @@ int main(const int argc, char** argv) {
     fd_selector selector = NULL;
 
     for(int i = 0; i < args.nusers; i++)
-        usersCreate(args.users[i].name, args.users[i].pass);
+        usersCreate(args.users[i].name, args.users[i].pass, args.users[i].isAdmin);
 
     if (args.maildir == NULL) {
         err_msg = "No maildir specified";

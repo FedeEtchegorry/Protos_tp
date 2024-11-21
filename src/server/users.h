@@ -3,7 +3,8 @@
 
 #include <stdbool.h>
 
-void usersCreate(const char* username, const char* password);
+int initializeRegisteredUsers();
+void usersCreate(const char* username, const char* password, unsigned int isAdmin);
 bool userLogin(const char* username, const char* password);
 bool userExists(const char* username);
 

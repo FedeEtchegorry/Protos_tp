@@ -7,6 +7,8 @@
 
 #include "args.h"
 
+enum ROLE {USER = 0, ADMIN = 1};
+
 static unsigned short
 port(const char* s) {
     char* end = 0;
@@ -23,7 +25,7 @@ port(const char* s) {
 }
 
 static void
-user(char* s, struct users* user) {
+user(char* s, struct users* user, const unsigned int isAdmin) {
     char* p = strchr(s, ':');
     if (p == NULL) {
         fprintf(stderr, "password not found\n");
@@ -33,6 +35,7 @@ user(char* s, struct users* user) {
     p++;
     user->name = s;
     user->pass = p;
+    user->isAdmin = isAdmin;
 }
 
 static void
@@ -85,7 +88,7 @@ parse_args(const int argc, char** argv, struct pop3Args* args) {
     args->nusers=0;
     //------------------------Parsear argumentos---------------------------------
     while (true) {
-        const int c = getopt(argc, argv, "hl:L:t:p:P:u:d:v");
+        const int c = getopt(argc, argv, "hl:L:t:p:P:u:U:d:v");
         if (c == -1)
             break;
 
@@ -117,7 +120,15 @@ parse_args(const int argc, char** argv, struct pop3Args* args) {
                 fprintf(stderr, "maximun number of command line users reached: %d.\n", MAX_USERS);
                 exit(1);
             }
-            user(optarg, args->users + args->nusers);
+            user(optarg, args->users + args->nusers, USER);
+            args->nusers++;
+            break;
+        case 'U':
+            if (args->nusers >= MAX_USERS) {
+                fprintf(stderr, "maximun number of command line users reached: %d.\n", MAX_USERS);
+                exit(1);
+            }
+            user(optarg, args->users + args->nusers, ADMIN);
             args->nusers++;
             break;
         case 'v':
