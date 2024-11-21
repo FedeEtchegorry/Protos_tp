@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "selector.h"
 
@@ -15,6 +16,9 @@
 
 #define BUFFER_SIZE 8192
 #define MAX_HOSTNAME_LENGTH 255
+
+#define SUCCESS_MSG "+OK "
+#define ERROR_MSG "-ERR "
 
 //-------------------------------------Array de estados para la stm------------------------------------------
 static const struct state_definition stateHandlers[] = {
@@ -36,10 +40,7 @@ static const struct state_definition stateHandlers[] = {
         .on_write_ready = passOnWriteReady,
     },
     {
-        .state = METHOD_READ,
-    },
-    {
-        .state = METHOD_WRITE
+        .state = TRANSACTION
     },
     {
         .state = DONE
@@ -152,4 +153,45 @@ fail:
     if (client != -1) {
         close(client);
     }
+}
+
+void writeInBuffer(struct selector_key * key, bool isError, char * msg, long len) {
+    clientData * data = ATTACHMENT(key);
+
+    char * status = isError ? ERROR_MSG : SUCCESS_MSG;
+
+    size_t writable;
+
+    uint8_t* writeBuffer = buffer_write_ptr(&data->writeBuffer, &writable);
+    memcpy(writeBuffer, status, strlen(status));
+    buffer_write_adv(&data->writeBuffer, strlen(status));
+
+    writeBuffer = buffer_write_ptr(&data->writeBuffer, &writable);
+    memcpy(writeBuffer, msg, len);
+    buffer_write_adv(&data->writeBuffer, len);
+}
+
+bool sendFromBuffer(struct selector_key * key) {
+    clientData * data = ATTACHMENT(key);
+
+    size_t readable;
+    uint8_t * readBuffer = buffer_read_ptr(&data->writeBuffer, &readable);
+
+    ssize_t writeCount = send(key->fd, readBuffer, readable, 0);
+
+    buffer_read_adv(&data->writeBuffer, writeCount);
+
+    return readable == writeCount;
+}
+
+bool readAndParse(struct selector_key * key) {
+    clientData* data = ATTACHMENT(key);
+
+    size_t readLimit;
+    uint8_t* readBuffer = buffer_write_ptr(&data->readBuffer, &readLimit);
+    const ssize_t readCount = recv(key->fd, readBuffer, readLimit, 0);
+    buffer_write_adv(&data->readBuffer, readCount);
+
+    parse(&data->pop3Parser, &data->readBuffer);
+    return parserIsFinished(&data->pop3Parser);
 }

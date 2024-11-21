@@ -13,6 +13,7 @@
 #include "POP3Server.h"
 #include "selector.h"
 #include "args.h"
+#include "auth.h"
 
 #define DEFAULT_PORT 1080
 #define MAX_PENDING_CONNECTION_REQUESTS 5
@@ -39,6 +40,9 @@ int main(const int argc, char** argv) {
     selector_status ss = SELECTOR_SUCCESS;
     int server = -1;
     fd_selector selector = NULL;
+
+    for(int i = 0; i < args.nusers; i++)
+        usersCreate(args.users[i].name, args.users[i].pass);
 
     //--------------------------Defino estructura para el socket para soportar IPv6--------
     struct sockaddr_in6 addr = {0};

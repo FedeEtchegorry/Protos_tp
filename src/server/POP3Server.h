@@ -31,13 +31,15 @@ enum pop3_state {
 
     AUTH_PASS,
 
-    METHOD_READ,
-    METHOD_WRITE,
+    TRANSACTION,
 
     DONE,
     ERROR,
 };
 
 void pop3_passive_accept(struct selector_key* key);
+void writeInBuffer(struct selector_key * key, bool isError, char * msg, long len);
+bool sendFromBuffer(struct selector_key * key);
+bool readAndParse(struct selector_key * key);
 
 #endif //POP3STATEMACHINE_H

@@ -11,4 +11,7 @@ void passOnArrival(const unsigned state, struct selector_key *key);
 unsigned passOnReadReady(struct selector_key *key);
 unsigned passOnWriteReady(struct selector_key *key);
 
+void usersCreate(const char* username, const char* password);
+bool userLogin(const char* username, const char* password);
+
 #endif //AUTH_H
