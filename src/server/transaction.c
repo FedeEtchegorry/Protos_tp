@@ -18,6 +18,7 @@ const char * mailDirectory = NULL;
 
 //------------------------------------------------------Private Functions------------------------------------------
 #define MAX_AUX_BUFFER_SIZE 255
+
 static void handleList(struct selector_key * key) {
     clientData* data = ATTACHMENT(key);
     char message[MAX_AUX_BUFFER_SIZE];
@@ -35,8 +36,9 @@ static void handleList(struct selector_key * key) {
 
         writeInBuffer(key, false, false, ".", 1);
     } else {
+        if (data->pop3Parser.arg == NULL)
+            data->pop3Parser.arg = "";
         char * endPtr;
-        errno=0;
         long int msgNumber = strtol(data->pop3Parser.arg, &endPtr, 10);
         if (endPtr == data->pop3Parser.arg || *endPtr != '\0' || errno == ERANGE) {
             writeInBuffer(key, true, true, INVALID_NUMBER, sizeof(INVALID_NUMBER)-1);
@@ -48,8 +50,44 @@ static void handleList(struct selector_key * key) {
         }
     }
 }
-static unsigned handleRetr(struct selector_key * key) {
+static void handleRetr(struct selector_key * key) {
+    clientData* data = ATTACHMENT(key);
 
+    char * endPtr;
+    errno=0;
+    long int msgNumber = strtol(data->pop3Parser.arg, &endPtr, 10);
+
+    if (endPtr == data->pop3Parser.arg || *endPtr != '\0' || errno == ERANGE) {
+        writeInBuffer(key, true, true, INVALID_NUMBER, sizeof(INVALID_NUMBER)-1);
+    } else if (msgNumber > data->mailCount || msgNumber <= 0) {
+        writeInBuffer(key, true, true, NO_MESSAGE_FOUND, sizeof(NO_MESSAGE_FOUND)-1);
+    } else {
+        char auxBuffer[MAX_AUX_BUFFER_SIZE];
+        snprintf(auxBuffer, MAX_AUX_BUFFER_SIZE, "%u octets", data->mails[msgNumber-1]->size);
+        writeInBuffer(key, true, false, auxBuffer, strlen(auxBuffer));
+
+        snprintf(auxBuffer, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, data->currentUsername, data->mails[msgNumber-1]->seen ? "cur":"new", data->mails[msgNumber-1]->filename);
+        FILE * mail = fopen(auxBuffer, "r");
+
+
+        while (fgets(auxBuffer, MAX_AUX_BUFFER_SIZE, mail) != NULL) {
+            auxBuffer[strlen(auxBuffer)-1] = '\0';
+            writeInBuffer(key, false, false, auxBuffer, strlen(auxBuffer));
+        }
+
+        writeInBuffer(key, false, false, ".", 1);
+
+        fclose(mail);
+
+        if (data->mails[msgNumber-1]->seen == false) {
+            data->mails[msgNumber-1]->seen = true;
+            char oldPath[MAX_AUX_BUFFER_SIZE];
+            char newPath[MAX_AUX_BUFFER_SIZE];
+            snprintf(oldPath, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, data->currentUsername, "new", data->mails[msgNumber-1]->filename);
+            snprintf(newPath, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, data->currentUsername, "cur" , data->mails[msgNumber-1]->filename);
+            rename(oldPath, newPath);
+        }
+    }
 }
 static unsigned handleRset(struct selector_key * key) {
 
@@ -145,18 +183,25 @@ unsigned transactionOnReadReady(struct selector_key* key) {
         switch (data->pop3Parser.method) {
             case LIST:
                 handleList(key);
+                break;
             case RETR:
                 handleRetr(key);
+                break;
             case RSET:
                 handleRset(key);
+                break;
             case NOOP:
                 handleNoop(key);
+                break;
             case DELE:
                 handleDelete(key);
+                break;
             case STAT:
                 handleStat(key);
+                break;
             case QUIT:
                 handleQuit(key);
+                break;
             default:
                 handleUnknown(key);
         }
