@@ -111,3 +111,13 @@ bool userLogin(const char* username, const char* password) {
         return false;
     return true;
 }
+void getUsers(char** user_list) {
+    for (int i = 0; i < usersCount; i++) {
+        strcpy(user_list[i], users[i].username);
+    }
+}
+
+int getUsersCount(){
+    return usersCount;
+}
+
