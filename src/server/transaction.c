@@ -13,6 +13,7 @@
 
 #define NO_MESSAGE_FOUND "No message found"
 #define INVALID_NUMBER "Invalid message number"
+#define INVALID_COMMAND "Unknown command"
 
 const char * mailDirectory = NULL;
 
@@ -89,23 +90,50 @@ static void handleRetr(struct selector_key * key) {
         }
     }
 }
+
 static unsigned handleRset(struct selector_key * key) {
-
+    clientData* data = ATTACHMENT(key);
+    for (int i = 0; i < data->mailCount; i++)
+        data->mails[i]->deleted = false;
+    writeInBuffer(key, true, false, NULL, 0);
 }
+
 static unsigned handleNoop(struct selector_key * key) {
-
+    writeInBuffer(key, true, false, NULL, 0);
 }
-static unsigned handleDelete(struct selector_key * key) {
 
+static unsigned handleDelete(struct selector_key * key) {
+    clientData* data = ATTACHMENT(key);
+
+    char * endPtr;
+    errno=0;
+    long int msgNumber = strtol(data->pop3Parser.arg, &endPtr, 10);
+    if (endPtr == data->pop3Parser.arg || *endPtr != '\0' || errno == ERANGE) {
+        writeInBuffer(key, true, true, INVALID_NUMBER, sizeof(INVALID_NUMBER)-1);
+    } else if (msgNumber > data->mailCount || msgNumber <= 0) {
+        writeInBuffer(key, true, true, NO_MESSAGE_FOUND, sizeof(NO_MESSAGE_FOUND)-1);
+    } else {
+        data->mails[msgNumber-1]->deleted = true;
+        writeInBuffer(key, true, false, NULL, 0);
+    }
 }
 static unsigned handleStat(struct selector_key * key) {
+    clientData* data = ATTACHMENT(key);
+    unsigned totalOctets = 0;
+    for (int i = 0; i < data->mailCount; i++)
+        totalOctets += data->mails[i]->size;
 
+    char auxBuffer[MAX_AUX_BUFFER_SIZE];
+    snprintf(auxBuffer, MAX_AUX_BUFFER_SIZE, "%u %u", data->mailCount, totalOctets);
+    writeInBuffer(key, true, false, auxBuffer, strlen(auxBuffer));
 }
+
 static unsigned handleQuit(struct selector_key * key) {
-
+    //TODO
 }
-static unsigned handleUnknown(struct selector_key * key) {
 
+static unsigned handleUnknown(struct selector_key * key) {
+    writeInBuffer(key, true, true, INVALID_COMMAND, sizeof(INVALID_COMMAND)-1);
 }
 
 static size_t calculateOctetLength(const char *filePath) {
