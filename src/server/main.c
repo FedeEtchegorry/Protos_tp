@@ -47,7 +47,7 @@ int main(const int argc, char** argv) {
     int server = -1;
     fd_selector selector = NULL;
 
-    for(int i = 0; i < args.nusers; i++)
+    for (unsigned int i = 0; i < args.nusers; i++)
         usersCreate(args.users[i].name, args.users[i].pass, args.users[i].role);
 
     if (args.maildir == NULL) {

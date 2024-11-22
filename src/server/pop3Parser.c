@@ -26,7 +26,7 @@ static void processBuffer(pop3Parser * parser) {
     buffer[bytesRead - 2] = '\0'; // Eliminar \r\n
 
     char *command = strtok(buffer, " ");
-    for (int i = 0; i < strlen(command); i++)
+    for (unsigned long i = 0; i < strlen(command); i++)
         command[i] = toupper(command[i]);
     char *argument = strtok(NULL, " ");
 
