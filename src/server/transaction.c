@@ -175,6 +175,19 @@ static size_t calculateOctetLength(const char* filePath) {
     return octetCount;
 }
 
+static void createMaildir(clientData * data) {
+    char path[MAX_AUX_BUFFER_SIZE];
+    snprintf(path, MAX_AUX_BUFFER_SIZE, "%s/%s", mailDirectory, data->currentUsername);
+    mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    const char* subdirs[] = {"new", "cur", "tmp"};
+    for (int i=0; i<3 ; i++) {
+        char subdir[512];
+        snprintf(subdir, sizeof(subdir), "%s/%s/%s", mailDirectory, data->currentUsername, subdirs[i]);
+        mkdir(subdir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    }
+
+}
+
 static void loadMails(clientData* data) {
     DIR* dir;
     struct dirent* entry;
@@ -182,8 +195,8 @@ static void loadMails(clientData* data) {
     const char* subdirs[] = {"new", "cur"};
 
     for (int i = 0; i < 2; i++) {
-        char subdirPath[255];
-        snprintf(subdirPath, sizeof(subdirPath), "%s/%s/%s", mailDirectory, data->currentUsername, subdirs[i]);
+        char subdirPath[MAX_AUX_BUFFER_SIZE];
+        snprintf(subdirPath, MAX_AUX_BUFFER_SIZE, "%s/%s/%s", mailDirectory, data->currentUsername, subdirs[i]);
 
         dir = opendir(subdirPath);
 
@@ -193,12 +206,12 @@ static void loadMails(clientData* data) {
 
             struct mailInfo* info = malloc(sizeof(struct mailInfo));
 
-            char mailPath[MAX_DIRENT_SIZE];
-            snprintf(mailPath, MAX_DIRENT_SIZE, "%s/%s", subdirPath, entry->d_name);
+            char mailPath[512];
+            snprintf(mailPath, sizeof(mailPath), "%s/%s", subdirPath, entry->d_name);
 
             info->filename = strdup(entry->d_name);
             info->size = calculateOctetLength(mailPath);
-            info->seen = i == 1;
+            info->seen = (i == 1);
             info->deleted = false;
 
             data->mails[data->mailCount++] = info;
@@ -211,6 +224,7 @@ static void loadMails(clientData* data) {
 //------------------------------------------------------Public Functions------------------------------------------
 void transactionOnArrival(const unsigned int state, struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
+    createMaildir(data);
     loadMails(data);
     resetParser(&data->pop3Parser);
     selector_set_interest_key(key, OP_READ);
