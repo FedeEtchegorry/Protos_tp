@@ -25,7 +25,7 @@ port(const char* s) {
 }
 
 static void
-user(char* s, struct users* user, const unsigned int isAdmin) {
+user(char* s, struct users* user, const unsigned int role) {
     char* p = strchr(s, ':');
     if (p == NULL) {
         fprintf(stderr, "password not found\n");
@@ -35,7 +35,7 @@ user(char* s, struct users* user, const unsigned int isAdmin) {
     p++;
     user->name = s;
     user->pass = p;
-    user->isAdmin = isAdmin;
+    user->role = role;
 }
 
 static void

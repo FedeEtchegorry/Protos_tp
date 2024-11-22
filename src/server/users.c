@@ -13,7 +13,7 @@
 typedef struct {
     char username[USERS_MAX_USERNAME_LENGTH + 1];
     char password[USERS_MAX_PASSWORD_LENGTH + 1];
-    unsigned int isAdmin;
+    unsigned int role;
 } user;
 
 static user users[MAX_USERS];
@@ -32,14 +32,14 @@ static int getIndexOf(const char* username) {
     return index;
 }
 
-static void persistUser(const char *username, const char *password, unsigned int isAdmin) {
+static void persistUser(const char *username, const char *password, unsigned int role) {
     FILE *file = fopen(USERS_CSV, "a");
     if (!file) {
         perror("Error al abrir el archivo users.csv");
         return;
     }
 
-    fprintf(file, "%s;%s;%u\n", username, password, isAdmin);
+    fprintf(file, "%s;%s;%u\n", username, password, role);
     fclose(file);
 }
 
@@ -70,14 +70,14 @@ int initializeRegisteredUsers() {
 
         char *username = strtok(line, ";");
         char *password = strtok(NULL, ";");
-        char *isAdminStr = strtok(NULL, "\n");
+        char *roleStr = strtok(NULL, "\n");
 
-        if (username && password && isAdminStr && usersCount < MAX_USERS) {
+        if (username && password && roleStr && usersCount < MAX_USERS) {
             strncpy(users[usersCount].username, username, USERS_MAX_USERNAME_LENGTH);
             users[usersCount].username[USERS_MAX_USERNAME_LENGTH] = '\0';
             strncpy(users[usersCount].password, password, USERS_MAX_PASSWORD_LENGTH);
             users[usersCount].password[USERS_MAX_PASSWORD_LENGTH] = '\0';
-            users[usersCount].isAdmin = (strcmp(isAdminStr, "1") == 0) ? 1 : 0;
+            users[usersCount].role = (strcmp(roleStr, "1") == 0) ? 1 : 0;
             usersCount++;
         }
     }
@@ -87,7 +87,7 @@ int initializeRegisteredUsers() {
 }
 
 
-void usersCreate(const char* username, const char* password, unsigned int isAdmin) {
+void usersCreate(const char* username, const char* password, unsigned int role) {
     if(usersCount >= MAX_USERS) {
         fprintf(stderr, "ERROR: Too many users\n");
         return;
@@ -98,11 +98,11 @@ void usersCreate(const char* username, const char* password, unsigned int isAdmi
     }
     strcpy(users[usersCount].username, username);
     strcpy(users[usersCount].password, password);
-    users[usersCount].isAdmin = isAdmin;
+    users[usersCount].role = role;
     usersCount++;
 
     // Agregarlo al csv.
-    persistUser(username, password, isAdmin);
+    persistUser(username, password, role);
 }
 
 bool userLogin(const char* username, const char* password) {
@@ -111,3 +111,13 @@ bool userLogin(const char* username, const char* password) {
         return false;
     return true;
 }
+void getUsers(char** user_list) {
+    for (int i = 0; i < usersCount; i++) {
+        strcpy(user_list[i], users[i].username);
+    }
+}
+
+int getUsersCount(){
+    return usersCount;
+}
+

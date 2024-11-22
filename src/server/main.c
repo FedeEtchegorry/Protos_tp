@@ -48,7 +48,7 @@ int main(const int argc, char** argv) {
     fd_selector selector = NULL;
 
     for(int i = 0; i < args.nusers; i++)
-        usersCreate(args.users[i].name, args.users[i].pass, args.users[i].isAdmin);
+        usersCreate(args.users[i].name, args.users[i].pass, args.users[i].role);
 
     if (args.maildir == NULL) {
         err_msg = "No maildir specified";
