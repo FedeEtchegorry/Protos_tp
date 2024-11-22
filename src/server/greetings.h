@@ -4,6 +4,5 @@
 #include "selector.h"
 
 void greetingOnArrival(const unsigned state, struct selector_key *key);
-unsigned greetingOnWriteReady(struct selector_key *key);
 
 #endif //GREETINGS_H

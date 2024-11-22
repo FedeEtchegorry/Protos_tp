@@ -32,8 +32,9 @@ typedef struct pop3Parser {
 } pop3Parser;
 
 void parserInit(pop3Parser * parser);
-void resetParser(pop3Parser * parser);
 bool parserIsFinished(pop3Parser * parser);
+void resetParser(pop3Parser * parser);
 void parse(pop3Parser * parser, buffer * buffer);
+void parse_feed(pop3Parser * parser, uint8_t c);
 
 #endif //AUTH_H

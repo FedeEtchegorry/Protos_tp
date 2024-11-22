@@ -1,6 +1,7 @@
 #include "pop3Parser.h"
 
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -23,7 +24,7 @@ static void processBuffer(pop3Parser * parser) {
     uint8_t * readBuffer = buffer_read_ptr(&parser->buffer, &bytesRead);
 
     memcpy(buffer, readBuffer, bytesRead);
-    buffer[bytesRead - 2] = '\0'; // Eliminar \r\n
+    buffer[bytesRead - 2] = '\0';
 
     char *command = strtok(buffer, " ");
     for (unsigned long i = 0; i < strlen(command); i++)
@@ -57,6 +58,15 @@ static void processBuffer(pop3Parser * parser) {
         parser->arg = strdup(argument);
 }
 
+void parse_feed(pop3Parser * parser, uint8_t c) {
+    buffer_write(&parser->buffer, c);
+    if (c == '\n') {
+        processBuffer(parser);
+        parser->state = READY;
+        printf("Parser is ready and has method:%d", parser->method);
+    }
+}
+
 void parse(pop3Parser * parser, buffer * buffer) {
     size_t readable;
     const uint8_t * readBuffer = buffer_read_ptr(buffer, &readable);
@@ -86,10 +96,12 @@ bool parserIsFinished(pop3Parser * parser) {
 }
 
 void resetParser(pop3Parser * parser) {
-    parser->state = READING;
-    parser->method = UNKNOWN;
-    parser->arg = NULL;
     buffer_reset(&parser->buffer);
+    if (parser->arg != NULL)
+        free(parser->arg);
+    parser->arg = NULL;
+    parser->method = UNKNOWN;
+    parser->state = READING;
 }
 
 void parserDestroy(pop3Parser * parser) {

@@ -1,6 +1,7 @@
 #include "POP3Server.h"
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -15,37 +16,97 @@
 #include "auth.h"
 #include "transaction.h"
 #include "update.h"
+#include "selector.h"
 
 #define BUFFER_SIZE 8192
 
 #define SUCCESS_MSG "+OK "
 #define ERROR_MSG "-ERR "
 
+
 char* mailDirectory = NULL;
+
+//-------------------------------------Generic handler (just to support pipelining)-------------------------
+static unsigned readOnReady(struct selector_key * key) {
+    clientData* data = ATTACHMENT(key);
+    bool isFinished = readAndParse(key);
+    if (isFinished) {
+        printf("Entrando a read finished\n");
+        unsigned next;
+        switch (stm_state(&data->stateMachine)) {
+        case AUTHORIZATION:
+            next = authOnReadReady(key);
+            break;
+        case TRANSACTION:
+            next= transactionOnReadReady(key);
+            break;
+        }
+        resetParser(&data->pop3Parser);
+        selector_set_interest_key(key, OP_WRITE);
+        return next;
+    }
+    return stm_state(&data->stateMachine);
+}
+
+static unsigned writeOnReady(struct selector_key * key) {
+    clientData* data = ATTACHMENT(key);
+    bool isFinished = sendFromBuffer(key);
+    if (isFinished) {
+        unsigned next;
+        switch (stm_state(&data->stateMachine)) {
+        case GREETINGS:
+            next = AUTHORIZATION;
+            break;
+        case AUTHORIZATION:
+            if (data->isAuth)
+                next = TRANSACTION;
+            else
+                next = AUTHORIZATION;
+            break;
+        case TRANSACTION:
+            next = TRANSACTION;
+            break;
+        case UPDATE:
+            next = DONE;
+        }
+
+        if (!buffer_can_read(&data->pop3Parser.buffer)) {
+            printf("no quedo nada y retorno %d", next);
+            selector_set_interest_key(key, OP_READ);
+            return next;
+        }
+
+        printf("queda algo en el buffer y salto a %d", next);
+        jump(&data->stateMachine, next, key);
+        selector_set_interest_key(key, OP_READ);
+        readOnReady(key);
+    }
+    return stm_state(&data->stateMachine);
+}
 
 //-------------------------------------Array de estados para la stm------------------------------------------
 static const struct state_definition stateHandlers[] = {
     {
         .state = GREETINGS,
         .on_arrival = greetingOnArrival,
-        .on_write_ready = greetingOnWriteReady
+        .on_write_ready = writeOnReady
     },
     {
         .state = AUTHORIZATION,
         .on_arrival = authOnArrival,
-        .on_read_ready = authOnReadReady,
-        .on_write_ready = authOnWriteReady,
+        .on_read_ready = readOnReady,
+        .on_write_ready = writeOnReady,
     },
     {
         .state = TRANSACTION,
         .on_arrival = transactionOnArrival,
-        .on_read_ready = transactionOnReadReady,
-        .on_write_ready = transactionOnWriteReady,
+        .on_read_ready = readOnReady,
+        .on_write_ready = writeOnReady,
     },
     {
         .state = UPDATE,
         .on_arrival = updateOnArrival,
-        .on_write_ready = updateOnWriteReady,
+        .on_write_ready = writeOnReady,
     },
     {
         .state = DONE,
@@ -89,6 +150,8 @@ pop3_done(struct selector_key* key) {
     selector_unregister_fd(key->s, key->fd);
     close(key->fd);
 
+    if (mailDirectory != NULL)
+        free(mailDirectory);
     free(data->readBuffer.data);
     free(data->writeBuffer.data);
     free(data);
@@ -207,6 +270,12 @@ bool readAndParse(struct selector_key* key) {
     const ssize_t readCount = recv(key->fd, readBuffer, readLimit, 0);
     buffer_write_adv(&data->readBuffer, readCount);
 
-    parse(&data->pop3Parser, &data->readBuffer);
+    while (!parserIsFinished(&data->pop3Parser) && buffer_can_read(&data->readBuffer))
+        parse_feed(&data->pop3Parser, buffer_read(&data->readBuffer));
+
+    if (parserIsFinished(&data->pop3Parser)) {
+        printf("terminooooo");
+    } else
+        printf("no terminooooo");
     return parserIsFinished(&data->pop3Parser);
 }

@@ -12,9 +12,3 @@ void greetingOnArrival(const unsigned state, struct selector_key *key) {
     selector_set_interest_key(key, OP_WRITE);
 }
 
-unsigned greetingOnWriteReady(struct selector_key *key) {
-    if(!sendFromBuffer(key))
-        return GREETINGS;
-
-    return AUTHORIZATION;
-}
