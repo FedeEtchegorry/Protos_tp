@@ -32,6 +32,9 @@ static void processBuffer(pop3Parser * parser) {
     buffer[bytesRead - inc] = '\0';
 
     char *command = strtok(buffer, " ");
+    if (command == NULL)
+        return;
+
     for (unsigned long i = 0; i < strlen(command); i++)
         command[i] = toupper(command[i]);
     char *argument = strtok(NULL, " ");
