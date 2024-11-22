@@ -24,7 +24,12 @@ static void processBuffer(pop3Parser * parser) {
     uint8_t * readBuffer = buffer_read_ptr(&parser->buffer, &bytesRead);
 
     memcpy(buffer, readBuffer, bytesRead);
-    buffer[bytesRead - 2] = '\0';
+    int inc;
+    if (parser->isCRLF)
+        inc = 2;
+    else
+        inc = 1;
+    buffer[bytesRead - inc] = '\0';
 
     char *command = strtok(buffer, " ");
     for (unsigned long i = 0; i < strlen(command); i++)
@@ -63,10 +68,14 @@ static void processBuffer(pop3Parser * parser) {
 
 void parse_feed(pop3Parser * parser, uint8_t c) {
     buffer_write(&parser->buffer, c);
+    if (c == '\r')
+        parser->isCRLF = true;
+    else if (c != '\n')
+        parser->isCRLF = false;
+
     if (c == '\n') {
         processBuffer(parser);
         parser->state = READY;
-        printf("Parser is ready and has method:%d", parser->method);
     }
 }
 
@@ -103,6 +112,7 @@ void resetParser(pop3Parser * parser) {
     if (parser->arg != NULL)
         free(parser->arg);
     parser->arg = NULL;
+    parser->isCRLF = false;
     parser->method = UNKNOWN;
     parser->state = READING;
 }

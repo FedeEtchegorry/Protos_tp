@@ -31,7 +31,6 @@ static unsigned readOnReady(struct selector_key * key) {
     clientData* data = ATTACHMENT(key);
     bool isFinished = readAndParse(key);
     if (isFinished) {
-        printf("Entrando a read finished\n");
         unsigned next;
         switch (stm_state(&data->stateMachine)) {
         case AUTHORIZATION:
@@ -71,12 +70,10 @@ static unsigned writeOnReady(struct selector_key * key) {
         }
 
         if (!buffer_can_read(&data->readBuffer)) {
-            printf("no quedo nada y retorno %d", next);
             selector_set_interest_key(key, OP_READ);
             return next;
         }
 
-        printf("queda algo en el buffer y salto a %d", next);
         jump(&data->stateMachine, next, key);
         selector_set_interest_key(key, OP_READ);
         readOnReady(key);

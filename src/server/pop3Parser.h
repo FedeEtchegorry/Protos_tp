@@ -25,6 +25,8 @@ enum state {
 typedef struct pop3Parser {
   enum state state;
 
+  bool isCRLF;
+
   enum methods method;
   char * arg;
 
