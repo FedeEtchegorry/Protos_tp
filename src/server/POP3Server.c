@@ -70,7 +70,7 @@ static unsigned writeOnReady(struct selector_key * key) {
             next = DONE;
         }
 
-        if (!buffer_can_read(&data->pop3Parser.buffer)) {
+        if (!buffer_can_read(&data->readBuffer)) {
             printf("no quedo nada y retorno %d", next);
             selector_set_interest_key(key, OP_READ);
             return next;
@@ -273,9 +273,5 @@ bool readAndParse(struct selector_key* key) {
     while (!parserIsFinished(&data->pop3Parser) && buffer_can_read(&data->readBuffer))
         parse_feed(&data->pop3Parser, buffer_read(&data->readBuffer));
 
-    if (parserIsFinished(&data->pop3Parser)) {
-        printf("terminooooo");
-    } else
-        printf("no terminooooo");
     return parserIsFinished(&data->pop3Parser);
 }

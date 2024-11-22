@@ -54,8 +54,11 @@ static void processBuffer(pop3Parser * parser) {
     else
         parser->method = UNKNOWN;
 
+
     if (argument != NULL)
         parser->arg = strdup(argument);
+
+    printf("Command: %s\n", command);
 }
 
 void parse_feed(pop3Parser * parser, uint8_t c) {
