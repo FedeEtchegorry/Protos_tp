@@ -35,7 +35,7 @@ static int getIndexOf(const char* username) {
 static void persistUser(const char *username, const char *password, unsigned int role) {
     FILE *file = fopen(USERS_CSV, "a");
     if (!file) {
-        perror("Error al abrir el archivo users.csv");
+        perror("Error al abrir el archivo " USERS_CSV "\n");
         return;
     }
 
@@ -54,7 +54,7 @@ int initializeRegisteredUsers() {
     if (!file) {
         file = fopen(USERS_CSV, "w");
         if (!file) {
-            fprintf(stderr , "Error creating file users.csv");
+            fprintf(stderr , "Error creating file %s\n", USERS_CSV);
             return -1;
         }
         fclose(file);
@@ -89,7 +89,7 @@ int initializeRegisteredUsers() {
 
 void usersCreate(const char* username, const char* password, unsigned int role) {
     if(usersCount >= MAX_USERS) {
-        fprintf(stderr, "ERROR: Too many users\n");
+        fprintf(stderr, "ERROR: Too many users (%d). Max limit: %d\n", usersCount, MAX_USERS);
         return;
     }
     if(userExists(username) == true) {
