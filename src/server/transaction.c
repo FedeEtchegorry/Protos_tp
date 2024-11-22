@@ -186,6 +186,10 @@ static void loadMails(clientData* data) {
         snprintf(subdirPath, sizeof(subdirPath), "%s/%s/%s", mailDirectory, data->currentUsername, subdirs[i]);
 
         dir = opendir(subdirPath);
+        if (dir == NULL) {
+            perror("opendir failed");
+            continue;
+        }
 
         while ((entry = readdir(dir)) != NULL) {
             if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
