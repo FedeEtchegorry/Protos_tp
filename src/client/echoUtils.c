@@ -10,7 +10,6 @@
 
 
 int tcpClientSocket(const char *host, const char *service) {
-    char addrBuffer[MAX_ADDR_BUFFER];
     struct addrinfo addrCriteria;                   // Criteria for address match
     memset(&addrCriteria, 0, sizeof(addrCriteria)); // Zero out structure
     addrCriteria.ai_family = AF_UNSPEC;             // v4 or v6 is OK

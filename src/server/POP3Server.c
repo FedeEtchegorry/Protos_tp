@@ -31,7 +31,7 @@ static unsigned readOnReady(struct selector_key * key) {
     clientData* data = ATTACHMENT(key);
     bool isFinished = readAndParse(key);
     if (isFinished) {
-        unsigned next;
+        unsigned next = AUTHORIZATION;
         switch (stm_state(&data->stateMachine)) {
         case AUTHORIZATION:
             next = authOnReadReady(key);
@@ -51,7 +51,7 @@ static unsigned writeOnReady(struct selector_key * key) {
     clientData* data = ATTACHMENT(key);
     bool isFinished = sendFromBuffer(key);
     if (isFinished) {
-        unsigned next;
+        unsigned next = AUTHORIZATION;
         switch (stm_state(&data->stateMachine)) {
         case GREETINGS:
             next = AUTHORIZATION;
@@ -131,6 +131,7 @@ clientData* newClientData(const struct sockaddr_storage clientAddress) {
 
     clientData->currentUsername = NULL;
     clientData->isAuth = false;
+    clientData->closed = false;
 
     clientData->mailCount = 0;
 
@@ -143,12 +144,13 @@ clientData* newClientData(const struct sockaddr_storage clientAddress) {
 static void
 pop3_done(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
+    if (data->closed)
+        return;
+    data->closed = true;
 
     selector_unregister_fd(key->s, key->fd);
     close(key->fd);
 
-    if (mailDirectory != NULL)
-        free(mailDirectory);
     free(data->readBuffer.data);
     free(data->writeBuffer.data);
     free(data);
@@ -184,10 +186,18 @@ pop3_block(struct selector_key* key) {
     }
 }
 
+static void
+pop3_close(struct selector_key* key) {
+    struct state_machine* stm = &ATTACHMENT(key)->stateMachine;
+    stm_handler_close(stm, key);
+    pop3_done(key);
+}
+
 static const fd_handler pop3_handler = {
     .handle_read = pop3_read,
     .handle_write = pop3_write,
     .handle_block = pop3_block,
+    .handle_close = pop3_close,
 };
 
 //------------------------------Passive Socket--------------------------------------------------------
@@ -256,7 +266,7 @@ bool sendFromBuffer(struct selector_key* key) {
 
     buffer_read_adv(&data->writeBuffer, writeCount);
 
-    return readable == writeCount;
+    return readable == (size_t) writeCount;
 }
 
 bool readAndParse(struct selector_key* key) {

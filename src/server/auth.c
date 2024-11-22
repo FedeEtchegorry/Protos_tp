@@ -50,12 +50,10 @@ static void handleUnknown(struct selector_key* key) {
 
 //----------------------------------USER Handlers------------------------------------
 void authOnArrival(const unsigned state, struct selector_key* key) {
-    printf("Entering auth state\n");
     selector_set_interest_key(key, OP_READ);
 }
 
 unsigned authOnReadReady(struct selector_key* key) {
-    printf("Reading auth\n");
     if (readAndParse(key)) {
         clientData* data = ATTACHMENT(key);
         switch (data->pop3Parser.method) {

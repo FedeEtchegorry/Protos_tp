@@ -35,6 +35,7 @@ typedef struct clientData {
 
     char * currentUsername;
     bool isAuth;
+    bool closed;
 
     struct mailInfo * mails[MAX_MAILS];
     unsigned mailCount;
