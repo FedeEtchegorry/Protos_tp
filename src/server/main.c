@@ -54,7 +54,7 @@ int main(const int argc, char** argv) {
         err_msg = "No maildir specified";
         goto finally;
     }
-    initTransactionModule(args.maildir);
+    initMaildir(args.maildir);
     //--------------------------Defino estructura para el socket para soportar IPv6--------
     struct sockaddr_in6 addr = {0};
     addr.sin6_family = AF_INET6;

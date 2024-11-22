@@ -1,74 +1,55 @@
 #include "auth.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "POP3Server.h"
 #include "users.h"
 
-#define VALID_USER "Valid user"
-#define AUTH_FAILED "Authentication failed"
-#define AUTH_SUCCESS "Logged in successfully"
-#define NO_USERNAME "No username given"
-#define INVALID_METHOD "Invalid method"
+
 
 //---------------------------------Private definitions-------------------------------
-
-
-static unsigned handleUsername(struct selector_key* key) {
+static void handleUsername(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
     const char* username = data->pop3Parser.arg;
     if (username == NULL)
         username = "";
 
+    if (data->currentUsername != NULL)
+        free(data->currentUsername);
     data->currentUsername = strdup(username);
 
     writeInBuffer(key, true, false, NULL, 0);
-    selector_set_interest_key(key, OP_WRITE);
-    return AUTHORIZATION;
 }
 
-static unsigned handlePassword(struct selector_key* key) {
+static void handlePassword(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
     if (data->currentUsername == NULL) {
         writeInBuffer(key, true, true, NO_USERNAME, sizeof(NO_USERNAME)-1);
-        selector_set_interest_key(key, OP_WRITE);
-        return AUTHORIZATION;
+        return;
     }
 
     const char* password = data->pop3Parser.arg;
     if(password == NULL)
         password = "";
 
-    data->currentPassword = strdup(password);
-
-    if(!userLogin(data->currentUsername, data->currentPassword)) {
+    if(!userLogin(data->currentUsername, data->pop3Parser.arg)) {
         writeInBuffer(key, true, true, AUTH_FAILED, sizeof(AUTH_FAILED)-1);
-        selector_set_interest_key(key, OP_WRITE);
         data->currentUsername = NULL;
-        data->currentPassword = NULL;
-        return AUTHORIZATION;
+        return;
     }
 
-    data->isAuth = true;
+    data->isAuth=true;
     writeInBuffer(key, true, false, AUTH_SUCCESS, sizeof(AUTH_SUCCESS) - 1);
-    selector_set_interest_key(key, OP_WRITE);
-    return AUTHORIZATION;
 }
 
-static unsigned handleQuit(struct selector_key* key) {
-    //TODO
-}
-
-static unsigned handleUnknown(struct selector_key* key) {
+static void handleUnknown(struct selector_key* key) {
     writeInBuffer(key, true, true, INVALID_METHOD, sizeof(INVALID_METHOD) - 1);
-    selector_set_interest_key(key, OP_WRITE);
-    return AUTHORIZATION;
 }
 
 //----------------------------------USER Handlers------------------------------------
 void authOnArrival(const unsigned state, struct selector_key* key) {
-    printf("Entre a authorization\n");
     clientData* data = ATTACHMENT(key);
     resetParser(&data->pop3Parser);
     selector_set_interest_key(key, OP_READ);
@@ -79,17 +60,17 @@ unsigned authOnReadReady(struct selector_key* key) {
         clientData* data = ATTACHMENT(key);
         switch (data->pop3Parser.method) {
             case USER:
-                printf("Leo el username: %s\n", data->pop3Parser.arg);
-                return handleUsername(key);
+                handleUsername(key);
+                break;
             case PASS:
-                printf("Leo la contraseña: %s\n", data->pop3Parser.arg);
-                return handlePassword(key);
+                handlePassword(key);
+                break;
             case QUIT:
-                return handleQuit(key);
+                return DONE;
             default:
-                printf("Comando descnocido\n");
-                return handleUnknown(key);
+                handleUnknown(key);
         }
+        selector_set_interest_key(key, OP_WRITE);
     }
     return AUTHORIZATION;
 }
@@ -104,7 +85,6 @@ unsigned authOnWriteReady(struct selector_key* key) {
 
     resetParser(&data->pop3Parser);
     selector_set_interest_key(key, OP_READ);
-    printf("Reseteo el parser y vuelvo a authorization\n");
     return AUTHORIZATION;
 }
 

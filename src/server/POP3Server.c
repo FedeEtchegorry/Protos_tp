@@ -14,12 +14,14 @@
 #include "greetings.h"
 #include "auth.h"
 #include "transaction.h"
+#include "update.h"
 
 #define BUFFER_SIZE 8192
-#define MAX_HOSTNAME_LENGTH 255
 
 #define SUCCESS_MSG "+OK "
 #define ERROR_MSG "-ERR "
+
+char* mailDirectory = NULL;
 
 //-------------------------------------Array de estados para la stm------------------------------------------
 static const struct state_definition stateHandlers[] = {
@@ -41,7 +43,12 @@ static const struct state_definition stateHandlers[] = {
         .on_write_ready = transactionOnWriteReady,
     },
     {
-        .state = DONE
+        .state = UPDATE,
+        .on_arrival = updateOnArrival,
+        .on_write_ready = updateOnWriteReady,
+    },
+    {
+        .state = DONE,
     },
     {
         .state = ERROR
@@ -65,10 +72,9 @@ clientData* newClientData(const struct sockaddr_storage clientAddress) {
     parserInit(&clientData->pop3Parser);
 
     clientData->currentUsername = NULL;
-    clientData->currentPassword = NULL;
     clientData->isAuth = false;
 
-    clientData->mailCount=0;
+    clientData->mailCount = 0;
 
     clientData->clientAddress = clientAddress;
 
@@ -118,17 +124,9 @@ pop3_block(struct selector_key* key) {
     }
 }
 
-static void
-pop3_close(struct selector_key* key) {
-    struct state_machine* stm = &ATTACHMENT(key)->stateMachine;
-    stm_handler_close(stm, key);
-    pop3_done(key);
-}
-
 static const fd_handler pop3_handler = {
     .handle_read = pop3_read,
     .handle_write = pop3_write,
-    .handle_close = pop3_close,
     .handle_block = pop3_block,
 };
 
@@ -158,14 +156,18 @@ fail:
     }
 }
 
-void writeInBuffer(struct selector_key * key, bool hasStatusCode, bool isError, char * msg, long len) {
-    clientData * data = ATTACHMENT(key);
+void initMaildir(const char* directory) {
+    mailDirectory = strdup(directory);
+}
+
+void writeInBuffer(struct selector_key* key, bool hasStatusCode, bool isError, char* msg, long len) {
+    clientData* data = ATTACHMENT(key);
 
     size_t writable;
     uint8_t* writeBuffer;
 
     if (hasStatusCode == true) {
-        char * status = isError ? ERROR_MSG : SUCCESS_MSG;
+        char* status = isError ? ERROR_MSG : SUCCESS_MSG;
 
         writeBuffer = buffer_write_ptr(&data->writeBuffer, &writable);
         memcpy(writeBuffer, status, strlen(status));
@@ -184,11 +186,11 @@ void writeInBuffer(struct selector_key * key, bool hasStatusCode, bool isError, 
     buffer_write_adv(&data->writeBuffer, 2);
 }
 
-bool sendFromBuffer(struct selector_key * key) {
-    clientData * data = ATTACHMENT(key);
+bool sendFromBuffer(struct selector_key* key) {
+    clientData* data = ATTACHMENT(key);
 
     size_t readable;
-    uint8_t * readBuffer = buffer_read_ptr(&data->writeBuffer, &readable);
+    uint8_t* readBuffer = buffer_read_ptr(&data->writeBuffer, &readable);
 
     ssize_t writeCount = send(key->fd, readBuffer, readable, 0);
 
@@ -197,7 +199,7 @@ bool sendFromBuffer(struct selector_key * key) {
     return readable == writeCount;
 }
 
-bool readAndParse(struct selector_key * key) {
+bool readAndParse(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
 
     size_t readLimit;
