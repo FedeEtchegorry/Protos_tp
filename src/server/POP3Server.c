@@ -64,6 +64,8 @@ clientData* newClientData(const struct sockaddr_storage clientAddress) {
 
     parserInit(&clientData->pop3Parser);
 
+    clientData->currentUsername = NULL;
+    clientData->currentPassword = NULL;
     clientData->isAuth = false;
     clientData->clientAddress = clientAddress;
 

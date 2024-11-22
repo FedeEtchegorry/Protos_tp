@@ -13,8 +13,7 @@
 #define INVALID_METHOD "Invalid method"
 
 //---------------------------------Private definitions-------------------------------
-static char * currentUsername = NULL;
-static char * currentPassword = NULL;
+
 
 static unsigned handleUsername(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
@@ -22,7 +21,7 @@ static unsigned handleUsername(struct selector_key* key) {
     if (username == NULL)
         username = "";
 
-    currentUsername = strdup(username);
+    data->currentUsername = strdup(username);
 
     writeInBuffer(key, false, NULL, 0);
     selector_set_interest_key(key, OP_WRITE);
@@ -31,7 +30,7 @@ static unsigned handleUsername(struct selector_key* key) {
 
 static unsigned handlePassword(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    if (currentUsername == NULL) {
+    if (data->currentUsername == NULL) {
         writeInBuffer(key, true, NO_USERNAME, sizeof(NO_USERNAME)-1);
         selector_set_interest_key(key, OP_WRITE);
         return AUTHORIZATION;
@@ -41,13 +40,13 @@ static unsigned handlePassword(struct selector_key* key) {
     if(password == NULL)
         password = "";
 
-    currentPassword = strdup(password);
+    data->currentPassword = strdup(password);
 
-    if(!userLogin(currentUsername, currentPassword)) {
+    if(!userLogin(data->currentUsername, data->currentPassword)) {
         writeInBuffer(key, true, AUTH_FAILED, sizeof(AUTH_FAILED)-1);
         selector_set_interest_key(key, OP_WRITE);
-        currentUsername = NULL;
-        currentPassword = NULL;
+        data->currentUsername = NULL;
+        data->currentPassword = NULL;
         return AUTHORIZATION;
     }
 

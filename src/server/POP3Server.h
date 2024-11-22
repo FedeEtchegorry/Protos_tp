@@ -16,6 +16,8 @@ typedef struct clientData {
 
     struct sockaddr_storage clientAddress;
 
+    char * currentUsername;
+    char * currentPassword;
     bool isAuth;
 
     buffer readBuffer;

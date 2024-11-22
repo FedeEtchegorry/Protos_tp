@@ -10,7 +10,7 @@ const char * mailDirectory = NULL;
 
 //------------------------------------------------------Private Functions------------------------------------------
 static unsigned handleList(struct selector_key * key) {
-
+    
 }
 static unsigned handleRetr(struct selector_key * key) {
 
@@ -78,10 +78,4 @@ unsigned transactionOnWriteReady(struct selector_key* key) {
 
 void initTransactionModule(const char * mailDir) {
     mailDirectory = strdup(mailDir);
-    FILE *file = fopen(mailDirectory, "r");
-    if (file == NULL) {
-        perror("Error al abrir el archivo");
-        exit(1);
-    }
-    fclose(file);
 }
