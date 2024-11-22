@@ -3,6 +3,13 @@
 
 #include "selector.h"
 
+typedef struct mailInfo {
+    char * filename;
+    unsigned size;
+    bool deleted;
+    bool seen;
+} mailInfo;
+
 void initTransactionModule(const char * mailDir);
 
 void transactionOnArrival(const unsigned int state, struct selector_key *key);

@@ -23,7 +23,7 @@ static unsigned handleUsername(struct selector_key* key) {
 
     data->currentUsername = strdup(username);
 
-    writeInBuffer(key, false, NULL, 0);
+    writeInBuffer(key, true, false, NULL, 0);
     selector_set_interest_key(key, OP_WRITE);
     return AUTHORIZATION;
 }
@@ -31,7 +31,7 @@ static unsigned handleUsername(struct selector_key* key) {
 static unsigned handlePassword(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
     if (data->currentUsername == NULL) {
-        writeInBuffer(key, true, NO_USERNAME, sizeof(NO_USERNAME)-1);
+        writeInBuffer(key, true, true, NO_USERNAME, sizeof(NO_USERNAME)-1);
         selector_set_interest_key(key, OP_WRITE);
         return AUTHORIZATION;
     }
@@ -43,7 +43,7 @@ static unsigned handlePassword(struct selector_key* key) {
     data->currentPassword = strdup(password);
 
     if(!userLogin(data->currentUsername, data->currentPassword)) {
-        writeInBuffer(key, true, AUTH_FAILED, sizeof(AUTH_FAILED)-1);
+        writeInBuffer(key, true, true, AUTH_FAILED, sizeof(AUTH_FAILED)-1);
         selector_set_interest_key(key, OP_WRITE);
         data->currentUsername = NULL;
         data->currentPassword = NULL;
@@ -51,7 +51,7 @@ static unsigned handlePassword(struct selector_key* key) {
     }
 
     data->isAuth = true;
-    writeInBuffer(key, false, AUTH_SUCCESS, sizeof(AUTH_SUCCESS) - 1);
+    writeInBuffer(key, true, false, AUTH_SUCCESS, sizeof(AUTH_SUCCESS) - 1);
     selector_set_interest_key(key, OP_WRITE);
     return AUTHORIZATION;
 }
@@ -61,7 +61,7 @@ static unsigned handleQuit(struct selector_key* key) {
 }
 
 static unsigned handleUnknown(struct selector_key* key) {
-    writeInBuffer(key, true, INVALID_METHOD, sizeof(INVALID_METHOD) - 1);
+    writeInBuffer(key, true, true, INVALID_METHOD, sizeof(INVALID_METHOD) - 1);
     selector_set_interest_key(key, OP_WRITE);
     return AUTHORIZATION;
 }

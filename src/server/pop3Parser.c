@@ -36,6 +36,16 @@ static void processBuffer(pop3Parser * parser) {
         parser->method = PASS;
     else if(strcmp(command, "LIST") == 0)
         parser->method = LIST;
+    else if (strcmp(command, "STAT") == 0)
+        parser->method = STAT;
+    else if (strcmp(command, "RSET") == 0)
+        parser->method = RSET;
+    else if (strcmp(command, "DELE") == 0)
+        parser->method = DELE;
+    else if (strcmp(command, "NOOP") == 0)
+        parser->method = NOOP;
+    else if (strcmp(command, "DATA") == 0)
+        parser->method = DATA;
     else if(strcmp(command, "RETR") == 0)
         parser->method = RETR;
     else

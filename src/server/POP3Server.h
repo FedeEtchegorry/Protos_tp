@@ -3,11 +3,14 @@
 
 #include <sys/socket.h>
 
+#include "transaction.h"
 #include "pop3Parser.h"
 #include "buffer.h"
 #include "stm.h"
 
 #define ATTACHMENT(key) ((clientData *)(key->data))
+
+#define MAX_MAILS 50
 
 typedef struct clientData {
     struct state_machine stateMachine;
@@ -19,6 +22,9 @@ typedef struct clientData {
     char * currentUsername;
     char * currentPassword;
     bool isAuth;
+
+    struct mailInfo * mails[MAX_MAILS];
+    unsigned mailCount;
 
     buffer readBuffer;
     buffer writeBuffer;
@@ -38,7 +44,7 @@ enum pop3_state {
 };
 
 void pop3_passive_accept(struct selector_key* key);
-void writeInBuffer(struct selector_key * key, bool isError, char * msg, long len);
+void writeInBuffer(struct selector_key * key, bool hasStatusCode, bool isError, char * msg, long len);
 bool sendFromBuffer(struct selector_key * key);
 bool readAndParse(struct selector_key * key);
 

@@ -67,6 +67,9 @@ clientData* newClientData(const struct sockaddr_storage clientAddress) {
     clientData->currentUsername = NULL;
     clientData->currentPassword = NULL;
     clientData->isAuth = false;
+
+    clientData->mailCount=0;
+
     clientData->clientAddress = clientAddress;
 
     return clientData;
@@ -155,16 +158,19 @@ fail:
     }
 }
 
-void writeInBuffer(struct selector_key * key, bool isError, char * msg, long len) {
+void writeInBuffer(struct selector_key * key, bool hasStatusCode, bool isError, char * msg, long len) {
     clientData * data = ATTACHMENT(key);
 
-    char * status = isError ? ERROR_MSG : SUCCESS_MSG;
-
     size_t writable;
+    uint8_t* writeBuffer;
 
-    uint8_t* writeBuffer = buffer_write_ptr(&data->writeBuffer, &writable);
-    memcpy(writeBuffer, status, strlen(status));
-    buffer_write_adv(&data->writeBuffer, strlen(status));
+    if (hasStatusCode == true) {
+        char * status = isError ? ERROR_MSG : SUCCESS_MSG;
+
+        writeBuffer = buffer_write_ptr(&data->writeBuffer, &writable);
+        memcpy(writeBuffer, status, strlen(status));
+        buffer_write_adv(&data->writeBuffer, strlen(status));
+    }
 
     if (msg != NULL && len > 0) {
         writeBuffer = buffer_write_ptr(&data->writeBuffer, &writable);
