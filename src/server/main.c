@@ -35,9 +35,10 @@ int main(const int argc, char** argv) {
     if(initializeRegisteredUsers() < 0)
     {
         fprintf(stderr, "An error has occurred while fetching registered users.\n");
+        return -1;
     }
 
-    //--------------------------Parsear argumentos por stdin-----------------
+    //--------------------------Parsear argumentos-----------------
     struct pop3Args args;
     parse_args(argc, argv, &args);
 
@@ -48,7 +49,7 @@ int main(const int argc, char** argv) {
     fd_selector selector = NULL;
 
     for (unsigned int i = 0; i < args.nusers; i++)
-        usersCreate(args.users[i].name, args.users[i].pass, args.users[i].role);
+        usersCreate(args.users[i].name, args.users[i].pass, ROLE_USER);
 
     if (args.maildir == NULL) {
         err_msg = "No maildir specified";
