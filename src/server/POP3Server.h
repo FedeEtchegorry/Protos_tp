@@ -37,19 +37,6 @@ typedef struct clientData {
 } clientData;
 
 
-//---------------------------------------------POP3 States-----------------------------------------------------
-//enum pop3_state {
-//    GREETINGS,
-//
-//    AUTHORIZATION,
-//
-//    TRANSACTION,
-//
-//    UPDATE,
-//
-//    DONE,
-//    ERROR,
-//};
 
 //---------------------------------------------Public Functions------------------------------------------------
 void initMaildir(const char * directory);
