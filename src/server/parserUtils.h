@@ -26,7 +26,7 @@ typedef struct parser {
 } parser;
 
 void processBuffer(parser *parser);
-void parserInit(parser * parser, methodsMap** methods);
+void parserInit(parser * parser, methodsMap* methods);
 void parse_feed(parser * parser, uint8_t c);
 void parse(parser * parser, buffer * buffer);
 void resetParser(parser * parser);

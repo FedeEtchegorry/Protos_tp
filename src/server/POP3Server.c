@@ -71,8 +71,8 @@ clientData* newClientData(const struct sockaddr_storage clientAddress) {
     uint8_t* writeBuffer = malloc(BUFFER_SIZE);
     buffer_init(&clientData->data.readBuffer, BUFFER_SIZE, readBuffer);
     buffer_init(&clientData->data.writeBuffer, BUFFER_SIZE, writeBuffer);
-
-    parserInit(&clientData->data.pop3Parser);
+    const methodsMap * map = getPop3Methods();
+    parserInit(&clientData->data.parser, map);
 
     clientData->data.currentUsername = NULL;
     clientData->data.isAuth = false;

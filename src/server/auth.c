@@ -12,7 +12,7 @@
 //---------------------------------Private definitions-------------------------------
 static void handleUsername(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    const char* username = data->data.pop3Parser.arg;
+    const char* username = data->data.parser.arg;
     if (username == NULL)
         username = "";
 
@@ -30,11 +30,11 @@ static void handlePassword(struct selector_key* key) {
         return;
     }
 
-    const char* password = data->data.pop3Parser.arg;
+    const char* password = data->data.parser.arg;
     if(password == NULL)
         password = "";
 
-    if(!userLogin(data->data.currentUsername, data->data.pop3Parser.arg)) {
+    if(!userLogin(data->data.currentUsername, data->data.parser.arg)) {
         writeInBuffer(key, true, true, AUTH_FAILED, sizeof(AUTH_FAILED)-1);
         data->data.currentUsername = NULL;
         return;
@@ -55,7 +55,7 @@ void authOnArrival(const unsigned state, struct selector_key* key) {
 
 unsigned authOnReadReady(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    switch (data->data.pop3Parser.method) {
+    switch (data->data.parser.method) {
         case USER:
             handleUsername(key);
             break;

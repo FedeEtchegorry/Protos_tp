@@ -18,13 +18,13 @@ static int getMethod(const char *command, parser* parser) {
 }
 
 
-void parserInit(parser * parser, methodsMap** methods) {
+void parserInit(parser * parser, methodsMap* methods) {
   uint8_t * auxBuffer = malloc(BUFFER_SIZE);
   buffer_init(&parser->buffer, BUFFER_SIZE, auxBuffer);
   parser->state = READING;
-  parser->all_methods = *methods;
+  parser->all_methods = methods;
   int i=0;
-  while (methods[i]!=NULL) {
+  while (methods[i].command!=NULL) {
     i++;
   }
   parser->unknown_method=i;

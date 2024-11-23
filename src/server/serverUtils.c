@@ -36,7 +36,7 @@ unsigned readOnReady(struct selector_key * key) {
       next= transactionOnReadReady(key);
       break;
     }
-    resetParser(&data->pop3Parser);
+    resetParser(&data->parser);
     selector_set_interest_key(key, OP_WRITE);
     return next;
   }
@@ -185,8 +185,8 @@ bool readAndParse(struct selector_key* key) {
   const ssize_t readCount = recv(key->fd, readBuffer, readLimit, 0);
   buffer_write_adv(&data->readBuffer, readCount);
 
-  while (!parserIsFinished(&data->pop3Parser) && buffer_can_read(&data->readBuffer))
-    parse_feed(&data->pop3Parser, buffer_read(&data->readBuffer));
+  while (!parserIsFinished(&data->parser) && buffer_can_read(&data->readBuffer))
+    parse_feed(&data->parser, buffer_read(&data->readBuffer));
 
-  return parserIsFinished(&data->pop3Parser);
+  return parserIsFinished(&data->parser);
 }

@@ -16,6 +16,7 @@
 #include "pop3Parser.h"
 #include "stm.h"
 #include "transaction.h"
+#include "managerParser.h"
 
 
 #define BUFFER_SIZE 8192
@@ -64,8 +65,8 @@ managerData * newManagerData(const struct sockaddr_storage managerAddress) {
   uint8_t* writeBuffer = malloc(BUFFER_SIZE);
   buffer_init(&managerData->manager_data.readBuffer, BUFFER_SIZE, readBuffer);
   buffer_init(&managerData->manager_data.writeBuffer, BUFFER_SIZE, writeBuffer);
-
-  parserInit(&managerData->manager_data.pop3Parser);
+  const methodsMap * map = getManagerMethods();
+  parserInit(&managerData->manager_data.parser, map);
 
   managerData->manager_data.currentUsername = NULL;
   managerData->manager_data.isAuth = false;

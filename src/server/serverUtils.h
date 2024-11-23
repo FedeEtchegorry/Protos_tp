@@ -21,7 +21,7 @@ enum states_from_stm {
 typedef struct userData {
   struct state_machine stateMachine;
 
-  pop3Parser pop3Parser;
+  parser parser;
 
   struct sockaddr_storage sockaddrStorage;
 
