@@ -17,7 +17,6 @@
 #define ERROR_MSG "-ERR "
 
 
-
 //-------------------------------------Generic handler (just to support pipelining)-------------------------
 unsigned readOnReady(struct selector_key * key) {
   userData * data = ATTACHMENT_USER(key);

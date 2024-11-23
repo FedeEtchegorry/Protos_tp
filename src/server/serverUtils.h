@@ -9,9 +9,7 @@
 #define SUCCESS_MSG "+OK "
 #define ERROR_MSG "-ERR "
 
-
 #define ATTACHMENT_USER(key) ((userData *)(key->data))
-
 
 enum states_from_stm {
   GREETINGS,
@@ -21,7 +19,6 @@ enum states_from_stm {
   DONE,
   ERROR,
 };
-
 
 typedef struct userData {
   struct state_machine stateMachine;
