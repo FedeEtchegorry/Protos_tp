@@ -12,7 +12,7 @@ void updateOnArrival(const unsigned int state, struct selector_key *key) {
     for (unsigned int i = 0; i < data->mailCount; i++) {
       if (data->mails[i]->deleted) {
         char path[MAX_AUX_BUFFER_SIZE];
-        snprintf(path, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, data->currentUsername, data->mails[i]->seen ? "cur":"new", data->mails[i]->filename);
+        snprintf(path, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, data->data.currentUsername, data->mails[i]->seen ? "cur":"new", data->mails[i]->filename);
         remove(path);
       }
     }

@@ -12,6 +12,10 @@
 #include "POP3Server.h"
 #include "managerServer.h"
 
+#include "parserUtils.h"
+#include "managerParser.h"
+#include "pop3Parser.h"
+
 //------------------------------------------------------Private Functions------------------------------------------
 
 #define MAX_AUX_BUFFER_SIZE 255
@@ -21,8 +25,8 @@ static long int checkEmailNumber(struct selector_key* key, long int * result) {
     clientData* data = ATTACHMENT(key);
     errno=0;
     char* endPtr;
-    const long int msgNumber = strtol(data->pop3Parser.arg, &endPtr, 10);
-    if (endPtr == data->pop3Parser.arg || *endPtr != '\0' || errno == ERANGE) {
+    const long int msgNumber = strtol(data->data.parser.arg, &endPtr, 10);
+    if (endPtr == data->data.parser.arg || *endPtr != '\0' || errno == ERANGE) {
         writeInBuffer(key, true, true, INVALID_NUMBER, sizeof(INVALID_NUMBER) - 1);
         return 1;
     }
@@ -41,7 +45,7 @@ static long int checkEmailNumber(struct selector_key* key, long int * result) {
 static void handleList(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
     char message[MAX_AUX_BUFFER_SIZE];
-    if (data->pop3Parser.arg == NULL) {
+    if (data->data.parser.arg == NULL) {
         unsigned notDeleted = 0;
         for (unsigned i = 0; i < data->mailCount; i++) {
             if (!data->mails[i]->deleted)
@@ -61,8 +65,8 @@ static void handleList(struct selector_key* key) {
         writeInBuffer(key, false, false, ".", 1);
     }
     else {
-        if (data->pop3Parser.arg == NULL)
-            data->pop3Parser.arg = "";
+        if (data->data.parser.arg == NULL)
+            data->data.parser.arg = "";
 
         long int msgNumber;
         if (checkEmailNumber(key, &msgNumber) == 0) {
@@ -81,7 +85,7 @@ static void handleRetr(struct selector_key* key) {
         snprintf(auxBuffer, MAX_AUX_BUFFER_SIZE, "%u octets", data->mails[msgNumber - 1]->size);
         writeInBuffer(key, true, false, auxBuffer, strlen(auxBuffer));
 
-        snprintf(auxBuffer, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, data->currentUsername,
+        snprintf(auxBuffer, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, data->data.currentUsername,
                  data->mails[msgNumber - 1]->seen ? "cur" : "new", data->mails[msgNumber - 1]->filename);
         FILE* mail = fopen(auxBuffer, "r");
 
@@ -99,9 +103,9 @@ static void handleRetr(struct selector_key* key) {
             data->mails[msgNumber - 1]->seen = true;
             char oldPath[MAX_AUX_BUFFER_SIZE];
             char newPath[MAX_AUX_BUFFER_SIZE];
-            snprintf(oldPath, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, data->currentUsername, "new",
+            snprintf(oldPath, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, data->data.currentUsername, "new",
                      data->mails[msgNumber - 1]->filename);
-            snprintf(newPath, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, data->currentUsername, "cur",
+            snprintf(newPath, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, data->data.currentUsername, "cur",
                      data->mails[msgNumber - 1]->filename);
             rename(oldPath, newPath);
         }
@@ -180,12 +184,12 @@ static size_t calculateOctetLength(const char* filePath) {
 
 static void createMaildir(clientData * data) {
     char path[MAX_AUX_BUFFER_SIZE];
-    snprintf(path, MAX_AUX_BUFFER_SIZE, "%s/%s", mailDirectory, data->currentUsername);
+    snprintf(path, MAX_AUX_BUFFER_SIZE, "%s/%s", mailDirectory, data->data.currentUsername);
     mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     const char* subdirs[] = {"new", "cur", "tmp"};
     for (int i=0; i<3 ; i++) {
         char subdir[512];
-        snprintf(subdir, sizeof(subdir), "%s/%s/%s", mailDirectory, data->currentUsername, subdirs[i]);
+        snprintf(subdir, sizeof(subdir), "%s/%s/%s", mailDirectory, data->data.currentUsername, subdirs[i]);
         mkdir(subdir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
 
@@ -199,7 +203,7 @@ static void loadMails(clientData* data) {
 
     for (int i = 0; i < 2; i++) {
         char subdirPath[MAX_AUX_BUFFER_SIZE];
-        snprintf(subdirPath, MAX_AUX_BUFFER_SIZE, "%s/%s/%s", mailDirectory, data->currentUsername, subdirs[i]);
+        snprintf(subdirPath, MAX_AUX_BUFFER_SIZE, "%s/%s/%s", mailDirectory, data->data.currentUsername, subdirs[i]);
         dir = opendir(subdirPath);
         if (dir == NULL) {
             perror("opendir failed");
@@ -237,7 +241,7 @@ void transactionOnArrival(const unsigned int state, struct selector_key* key) {
 
 unsigned transactionOnReadReady(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    switch (data->pop3Parser.method) {
+    switch (data->data.parser.method) {
     case LIST:
         handleList(key);
         break;
@@ -272,7 +276,7 @@ void transactionOnArrivalForManager(const unsigned int state, struct selector_ke
 
 unsigned transactionManagerOnReadReady(struct selector_key* key) {
     managerData* data = ATTACHMENT_MANAGER(key);
-    switch (data->pop3Parser.method) {
+    switch (data->manager_data.parser.method) {
     case DATA:
         handleData(key);
     case QUIT:

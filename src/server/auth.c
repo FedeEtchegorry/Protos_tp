@@ -5,6 +5,8 @@
 #include <string.h>
 
 #include "POP3Server.h"
+#include "pop3Parser.h"
+#include "managerParser.h"
 #include "users.h"
 
 
@@ -56,13 +58,13 @@ void authOnArrival(const unsigned state, struct selector_key* key) {
 unsigned authOnReadReady(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
     switch (data->data.parser.method) {
-        case USER:
+        case USER | USER_M:
             handleUsername(key);
             break;
-        case PASS:
+        case PASS | PASS_M:
             handlePassword(key);
             break;
-        case QUIT:
+        case QUIT | QUIT_M:
             return DONE;
         default:
             handleUnknown(key);

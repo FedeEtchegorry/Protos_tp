@@ -3,6 +3,13 @@
 
 #include "parserUtils.h"
 
+enum manager_methods {
+  USER_M,
+  PASS_M,
+  DATA,
+  QUIT_M,
+  UNKNOWN_M
+};
 
 const methodsMap* getManagerMethods();
 

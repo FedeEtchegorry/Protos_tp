@@ -1,7 +1,7 @@
 #ifndef PROTOS_TP_SERVERUTILS_H
 #define PROTOS_TP_SERVERUTILS_H
 
-#include "pop3Parser.h"
+#include "parserUtils.h"
 #include "stm.h"
 #include <bits/socket.h>
 

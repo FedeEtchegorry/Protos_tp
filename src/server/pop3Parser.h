@@ -4,7 +4,18 @@
 #include "buffer.h"
 #include "parserUtils.h"
 
-
+enum methods {
+  USER,
+  PASS,
+  STAT,
+  LIST,
+  RETR,
+  DELE,
+  RSET,
+  NOOP,
+  QUIT,
+  UNKNOWN
+};
 
 const methodsMap* getPop3Methods();
 
