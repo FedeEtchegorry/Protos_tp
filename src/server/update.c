@@ -21,9 +21,3 @@ void updateOnArrival(const unsigned int state, struct selector_key *key) {
   selector_set_interest_key(key, OP_WRITE);
 }
 
-unsigned updateOnWriteReady(struct selector_key *key) {
-  if (!sendFromBuffer(key))
-    return UPDATE;
-
-  return DONE;
-}

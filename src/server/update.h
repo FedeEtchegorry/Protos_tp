@@ -4,6 +4,5 @@
 #include "selector.h"
 
 void updateOnArrival(const unsigned int state, struct selector_key *key);
-unsigned updateOnWriteReady(struct selector_key *key);
 
 #endif

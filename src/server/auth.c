@@ -54,33 +54,23 @@ void authOnArrival(const unsigned state, struct selector_key* key) {
 }
 
 unsigned authOnReadReady(struct selector_key* key) {
-    if (readAndParse(key)) {
-        clientData* data = ATTACHMENT(key);
-        switch (data->pop3Parser.method) {
-            case USER:
-                handleUsername(key);
-                break;
-            case PASS:
-                handlePassword(key);
-                break;
-            case QUIT:
-                return DONE;
-            default:
-                handleUnknown(key);
-        }
-        selector_set_interest_key(key, OP_WRITE);
+    clientData* data = ATTACHMENT(key);
+    switch (data->pop3Parser.method) {
+        case USER:
+            handleUsername(key);
+            break;
+        case PASS:
+            handlePassword(key);
+            break;
+        case QUIT:
+            return DONE;
+        default:
+            handleUnknown(key);
     }
     return AUTHORIZATION;
 }
 
-unsigned authOnWriteReady(struct selector_key* key) {
-    clientData* data = ATTACHMENT(key);
-    if (data->isAuth)
-        return TRANSACTION;
 
-    selector_set_interest_key(key, OP_READ);
-    return AUTHORIZATION;
-}
 
 
 

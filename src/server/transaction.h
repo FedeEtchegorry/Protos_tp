@@ -12,6 +12,5 @@ typedef struct mailInfo {
 
 void transactionOnArrival(const unsigned int state, struct selector_key *key);
 unsigned transactionOnReadReady(struct selector_key *key);
-unsigned transactionOnWriteReady(struct selector_key *key);
 
 #endif //TRANSACTION_H
