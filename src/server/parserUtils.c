@@ -18,7 +18,7 @@ static int getMethod(const char *command, parser* parser) {
 }
 
 
-void parserInit(parser * parser, methodsMap* methods) {
+void parserInit(parser * parser, const methodsMap* methods) {
   uint8_t * auxBuffer = malloc(BUFFER_SIZE);
   buffer_init(&parser->buffer, BUFFER_SIZE, auxBuffer);
   parser->state = READING;

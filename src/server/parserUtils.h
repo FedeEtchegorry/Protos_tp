@@ -21,12 +21,12 @@ typedef struct parser {
   int method;
   int state;
   buffer buffer;
-  methodsMap *all_methods;
+  const methodsMap *all_methods;
   int unknown_method;
 } parser;
 
 void processBuffer(parser *parser);
-void parserInit(parser * parser, methodsMap* methods);
+void parserInit(parser * parser, const methodsMap* methods);
 void parse_feed(parser * parser, uint8_t c);
 void parse(parser * parser, buffer * buffer);
 void resetParser(parser * parser);
