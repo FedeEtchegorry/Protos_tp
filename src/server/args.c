@@ -7,7 +7,6 @@
 
 #include "args.h"
 
-enum ROLE {USER = 0, ADMIN = 1};
 
 static unsigned short
 port(const char* s) {
@@ -25,7 +24,7 @@ port(const char* s) {
 }
 
 static void
-user(char* s, struct users* user, const unsigned int role) {
+user(char* s, struct users* user) {
     char* p = strchr(s, ':');
     if (p == NULL) {
         fprintf(stderr, "password not found\n");
@@ -35,7 +34,6 @@ user(char* s, struct users* user, const unsigned int role) {
     p++;
     user->name = s;
     user->pass = p;
-    user->role = role;
 }
 
 static void
@@ -120,15 +118,7 @@ parse_args(const int argc, char** argv, struct pop3Args* args) {
                 fprintf(stderr, "maximun number of command line users reached: %d.\n", MAX_USERS);
                 exit(1);
             }
-            user(optarg, args->users + args->nusers, USER);
-            args->nusers++;
-            break;
-        case 'U':
-            if (args->nusers >= MAX_USERS) {
-                fprintf(stderr, "maximun number of command line users reached: %d.\n", MAX_USERS);
-                exit(1);
-            }
-            user(optarg, args->users + args->nusers, ADMIN);
+            user(optarg, args->users + args->nusers);
             args->nusers++;
             break;
         case 'v':
