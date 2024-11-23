@@ -8,6 +8,7 @@
 #include "pop3Parser.h"
 #include "buffer.h"
 #include "stm.h"
+#include "serverUtils.h"
 
 //------------------------------------Defines to be used by all modules-----------------------------------
 #define ATTACHMENT_MANAGER(key) ((managerData *)(key->data))
@@ -25,29 +26,19 @@
 
 
 typedef struct managerData {
-  struct state_machine mngStateMachine;
-
-  pop3Parser pop3Parser;
-
-  struct sockaddr_storage managerAddress;
-
-  char * currentUsername;
-  bool isAuth;
-
-  buffer readBuffer;
-  buffer writeBuffer;
+  struct userData manager_data;
 } managerData;
 
 
-//---------------------------------------------Manager States-----------------------------------------------------
-enum manager_server_state {
-  GREETINGS_MNG,
-  AUTHORIZATION_MNG,
-  TRANSACTION_MNG,
-  DONE_MNG,
-  ERROR_MNG,
-  UPDATE_MNG
-};
+////---------------------------------------------Manager States-----------------------------------------------------
+//enum manager_server_state {
+//  GREETINGS_MNG,
+//  AUTHORIZATION_MNG,
+//  TRANSACTION_MNG,
+//  DONE_MNG,
+//  ERROR_MNG,
+//  UPDATE_MNG
+//};
 
 //---------------------------------------------Public Functions------------------------------------------------
 void manager_passive_accept(struct selector_key* key);

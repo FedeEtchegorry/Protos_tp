@@ -10,6 +10,7 @@
 #include <pthread.h>
 
 #include "POP3Server.h"
+#include "managerServer.h"
 
 //------------------------------------------------------Private Functions------------------------------------------
 
@@ -199,7 +200,6 @@ static void loadMails(clientData* data) {
     for (int i = 0; i < 2; i++) {
         char subdirPath[MAX_AUX_BUFFER_SIZE];
         snprintf(subdirPath, MAX_AUX_BUFFER_SIZE, "%s/%s/%s", mailDirectory, data->currentUsername, subdirs[i]);
-
         dir = opendir(subdirPath);
         if (dir == NULL) {
             perror("opendir failed");
@@ -271,7 +271,7 @@ void transactionOnArrivalForManager(const unsigned int state, struct selector_ke
 }
 
 unsigned transactionManagerOnReadReady(struct selector_key* key) {
-    clientData* data = ATTACHMENT(key);
+    managerData* data = ATTACHMENT_MANAGER(key);
     switch (data->pop3Parser.method) {
     case DATA:
         handleData(key);

@@ -5,6 +5,7 @@
 
 #include "transaction.h"
 #include "pop3Parser.h"
+#include "serverUtils.h"
 #include "buffer.h"
 #include "stm.h"
 
@@ -29,39 +30,26 @@ extern char * mailDirectory;
 
 
 
-
 typedef struct clientData {
-    struct state_machine stateMachine;
-
-    pop3Parser pop3Parser;
-
-    struct sockaddr_storage clientAddress;
-
-    char * currentUsername;
-    bool isAuth;
-    bool closed;
-
+    struct userData data;
     struct mailInfo * mails[MAX_MAILS];
     unsigned mailCount;
-
-    buffer readBuffer;
-    buffer writeBuffer;
 } clientData;
 
 
 //---------------------------------------------POP3 States-----------------------------------------------------
-enum pop3_state {
-    GREETINGS,
-
-    AUTHORIZATION,
-
-    TRANSACTION,
-
-    UPDATE,
-
-    DONE,
-    ERROR,
-};
+//enum pop3_state {
+//    GREETINGS,
+//
+//    AUTHORIZATION,
+//
+//    TRANSACTION,
+//
+//    UPDATE,
+//
+//    DONE,
+//    ERROR,
+//};
 
 //---------------------------------------------Public Functions------------------------------------------------
 void initMaildir(const char * directory);
