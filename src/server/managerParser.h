@@ -10,6 +10,6 @@ enum methods {
   QUIT,
   UNKNOWN
 };
-
+const methodsMap* getManagerMethods();
 
 #endif // PROTOS_TP_MANAGERPARSER_H

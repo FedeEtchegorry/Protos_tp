@@ -17,6 +17,6 @@ enum methods {
   UNKNOWN
 };
 
-
+const methodsMap* getPop3Methods();
 
 #endif //POP3PARSER_H
