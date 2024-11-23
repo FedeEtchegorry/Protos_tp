@@ -3,7 +3,12 @@
 
 #include "parserUtils.h"
 #include "stm.h"
-#include <bits/socket.h>
+#include <sys/socket.h>
+#define BUFFER_SIZE 8192
+
+#define SUCCESS_MSG "+OK "
+#define ERROR_MSG "-ERR "
+
 
 #define ATTACHMENT_USER(key) ((userData *)(key->data))
 
@@ -33,27 +38,6 @@ typedef struct userData {
   buffer writeBuffer;
 } userData;
 
-
-#include "serverUtils.h"
-#include "POP3Server.h"
-#include "auth.h"
-#include "buffer.h"
-#include "greetings.h"
-#include "pop3Parser.h"
-#include "stm.h"
-#include "transaction.h"
-#include "update.h"
-#include <stdbool.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-
-
-
-#define BUFFER_SIZE 8192
-
-#define SUCCESS_MSG "+OK "
-#define ERROR_MSG "-ERR "
 
 
 

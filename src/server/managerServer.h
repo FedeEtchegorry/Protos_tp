@@ -5,7 +5,7 @@
 #include <sys/socket.h>
 
 #include "transaction.h"
-#include "pop3Parser.h"
+
 #include "buffer.h"
 #include "stm.h"
 #include "serverUtils.h"
@@ -20,8 +20,6 @@
 #define AUTH_SUCCESS "Logged in successfully"
 #define NO_USERNAME "No username given"
 #define INVALID_METHOD "Invalid method"
-
-
 
 
 

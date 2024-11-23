@@ -1,14 +1,12 @@
 #include "managerServer.h"
 
-#include <stdint.h>
-#include <stdio.h>
+
 #include <stdlib.h>
 #include <string.h>
 
 #include "selector.h"
 
 #include <sys/socket.h>
-#include "serverUtils.h"
 
 #include "auth.h"
 #include "buffer.h"
@@ -17,6 +15,7 @@
 #include "stm.h"
 #include "transaction.h"
 #include "managerParser.h"
+#include "serverUtils.h"
 
 
 #define BUFFER_SIZE 8192

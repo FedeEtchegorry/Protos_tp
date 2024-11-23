@@ -15,6 +15,7 @@
 #include "transaction.h"
 #include "update.h"
 #include "parserUtils.h"
+#include "serverUtils.h"
 
 #define BUFFER_SIZE 8192
 

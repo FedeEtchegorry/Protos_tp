@@ -2,11 +2,8 @@
 #include "POP3Server.h"
 #include "auth.h"
 #include "buffer.h"
-#include "greetings.h"
-#include "pop3Parser.h"
 #include "stm.h"
 #include "transaction.h"
-#include "update.h"
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
