@@ -6,6 +6,7 @@
 
 static user users[MAX_USERS];
 static int usersCount = 0;
+static int adminCount = 0;
 
 //----------------------------------------Private functions-----------------------------------------
 static int getIndexOf(const char* username) {
@@ -65,9 +66,21 @@ int initializeRegisteredUsers() {
             users[usersCount].username[USERS_MAX_USERNAME_LENGTH] = '\0';
             strncpy(users[usersCount].password, password, USERS_MAX_PASSWORD_LENGTH);
             users[usersCount].password[USERS_MAX_PASSWORD_LENGTH] = '\0';
-            users[usersCount].role = (strcmp(roleStr, "1") == 0) ? 1 : 0;
+            if(strcmp(roleStr, "1") == 0){
+                users[usersCount].role = ROLE_ADMIN;
+                adminCount++;
+            } else{
+                users[usersCount].role = ROLE_USER;
+            }
             usersCount++;
         }
+    }
+
+    if(adminCount == 0){
+        strncpy(users[usersCount].username, DEFAULT_ADMIN_USERNAME, USERS_MAX_USERNAME_LENGTH);
+        strncpy(users[usersCount].password, DEFAULT_ADMIN_PASSWORD, USERS_MAX_PASSWORD_LENGTH);
+        users[usersCount].role = ROLE_ADMIN;
+        usersCount++;
     }
 
     fclose(file);
@@ -84,6 +97,12 @@ void usersCreate(const char* username, const char* password, unsigned int role) 
         fprintf(stderr, "WARNING: User '%s' already exists. Please try again with another username.\n", username);
         return;
     }
+
+    if(role != ROLE_USER && role != ROLE_ADMIN) {
+        fprintf(stderr, "ERROR: Invalid role. Role must be 0 (USER) or 1 (ADMIN).\n");
+        return;
+    }
+
     strcpy(users[usersCount].username, username);
     strcpy(users[usersCount].password, password);
     users[usersCount].role = role;
