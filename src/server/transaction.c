@@ -146,7 +146,9 @@ static void handleUnknown(struct selector_key* key) {
     writeInBuffer(key, true, true, INVALID_COMMAND, sizeof(INVALID_COMMAND) - 1);
 }
 
-
+static void handleData(struct selector_key* key){
+    printf("MENSAJE");
+}
 //---------------------------------------Aux functions-------------------------------------------------
 static size_t calculateOctetLength(const char* filePath) {
     FILE* file = fopen(filePath, "rb");
@@ -225,7 +227,7 @@ static void loadMails(clientData* data) {
     }
 }
 
-//------------------------------------------------------Public Functions------------------------------------------
+//------------------------------------------------------Public Functions For Pop3----------------------------------
 void transactionOnArrival(const unsigned int state, struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
     createMaildir(data);
@@ -259,7 +261,25 @@ unsigned transactionOnReadReady(struct selector_key* key) {
     default:
         handleUnknown(key);
     }
+    return TRANSACTION;
+}
 
+//-------------------------------------------------Public Functions For Manager--------------------------------------
+
+void transactionOnArrivalForManager(const unsigned int state, struct selector_key* key){
+    selector_set_interest_key(key, OP_READ);
+}
+
+unsigned transactionManagerOnReadReady(struct selector_key* key) {
+    clientData* data = ATTACHMENT(key);
+    switch (data->pop3Parser.method) {
+    case DATA:
+        handleData(key);
+    case QUIT:
+        return UPDATE;
+    default:
+        handleUnknown(key);
+    }
     return TRANSACTION;
 }
 

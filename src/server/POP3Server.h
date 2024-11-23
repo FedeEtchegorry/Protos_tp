@@ -11,6 +11,7 @@
 //------------------------------------Defines to be used by all modules-----------------------------------
 #define ATTACHMENT(key) ((clientData *)(key->data))
 
+
 #define GREETING "POP3 server ready"
 #define NO_MESSAGE_FOUND "No message found"
 #define INVALID_NUMBER "Invalid message number"
@@ -25,6 +26,9 @@
 #define MAX_MAILS 50
 
 extern char * mailDirectory;
+
+
+
 
 typedef struct clientData {
     struct state_machine stateMachine;
