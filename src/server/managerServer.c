@@ -42,7 +42,11 @@ static const struct state_definition stateHandlers[] = {
         .on_read_ready = readOnReady,
         .on_write_ready = writeOnReady,
     },
-
+    {
+        .state = UPDATE,
+        .on_arrival = NULL,
+        .on_write_ready = writeOnReady,
+    },
     {
         .state = DONE,
     },

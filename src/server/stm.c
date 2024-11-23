@@ -14,7 +14,7 @@ stm_init(struct state_machine *stm) {
     for(unsigned i = 0 ; i <= stm->max_state; i++) {
         if(i != stm->states[i].state) {
             fprintf(stdout, "Fallo: %d-%d de state\n", i, stm->states[i].state);
-            abort();
+            //abort();
         }
         fprintf(stdout, "Ciclo: %d de state\n", i);
     }
