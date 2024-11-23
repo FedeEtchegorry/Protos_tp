@@ -4,18 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define USERS_CSV "users.csv"
-
-#define USERS_MAX_USERNAME_LENGTH 255
-#define USERS_MAX_PASSWORD_LENGTH 255
-#define MAX_USERS 10
-
-typedef struct {
-    char username[USERS_MAX_USERNAME_LENGTH + 1];
-    char password[USERS_MAX_PASSWORD_LENGTH + 1];
-    unsigned int role;
-} user;
-
 static user users[MAX_USERS];
 static int usersCount = 0;
 

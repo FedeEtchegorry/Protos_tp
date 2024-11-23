@@ -3,6 +3,21 @@
 
 #include <stdbool.h>
 
+#define USERS_CSV "users.csv"
+
+#define USERS_MAX_USERNAME_LENGTH 255
+#define USERS_MAX_PASSWORD_LENGTH 255
+#define MAX_USERS 10
+
+typedef enum {ROLE_USER = 0, ROLE_ADMIN = 1} Role;
+
+typedef struct {
+    char username[USERS_MAX_USERNAME_LENGTH + 1];
+    char password[USERS_MAX_PASSWORD_LENGTH + 1];
+    Role role;
+} user;
+
+
 int initializeRegisteredUsers();
 void usersCreate(const char* username, const char* password, unsigned int role);
 bool userLogin(const char* username, const char* password);
