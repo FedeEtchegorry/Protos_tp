@@ -12,35 +12,35 @@
 //---------------------------------Private definitions-------------------------------
 static void handleUsername(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    const char* username = data->pop3Parser.arg;
+    const char* username = data->data.pop3Parser.arg;
     if (username == NULL)
         username = "";
 
-    if (data->currentUsername != NULL)
-        free(data->currentUsername);
-    data->currentUsername = strdup(username);
+    if (data->data.currentUsername != NULL)
+        free(data->data.currentUsername);
+    data->data.currentUsername = strdup(username);
 
     writeInBuffer(key, true, false, NULL, 0);
 }
 
 static void handlePassword(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    if (data->currentUsername == NULL) {
+    if (data->data.currentUsername == NULL) {
         writeInBuffer(key, true, true, NO_USERNAME, sizeof(NO_USERNAME)-1);
         return;
     }
 
-    const char* password = data->pop3Parser.arg;
+    const char* password = data->data.pop3Parser.arg;
     if(password == NULL)
         password = "";
 
-    if(!userLogin(data->currentUsername, data->pop3Parser.arg)) {
+    if(!userLogin(data->data.currentUsername, data->data.pop3Parser.arg)) {
         writeInBuffer(key, true, true, AUTH_FAILED, sizeof(AUTH_FAILED)-1);
-        data->currentUsername = NULL;
+        data->data.currentUsername = NULL;
         return;
     }
 
-    data->isAuth=true;
+    data->data.isAuth=true;
     writeInBuffer(key, true, false, AUTH_SUCCESS, sizeof(AUTH_SUCCESS) - 1);
 }
 
@@ -55,7 +55,7 @@ void authOnArrival(const unsigned state, struct selector_key* key) {
 
 unsigned authOnReadReady(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    switch (data->pop3Parser.method) {
+    switch (data->data.pop3Parser.method) {
         case USER:
             handleUsername(key);
             break;
