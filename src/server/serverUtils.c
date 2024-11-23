@@ -120,11 +120,17 @@ static void server_block(struct selector_key* key) {
     server_done(key);
   }
 }
+static void server_close(struct selector_key* key) {
+  struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
+  stm_handler_close(stm, key);
+  server_done(key);
+}
 
 static fd_handler handler = {
     .handle_read = server_read,
     .handle_write = server_write,
     .handle_block = server_block,
+    .handle_close = server_close,
 };
 
 fd_handler* getHandler(){

@@ -42,8 +42,6 @@ typedef struct managerData {
 
 //---------------------------------------------Public Functions------------------------------------------------
 void manager_passive_accept(struct selector_key* key);
-void writeInBuffer(struct selector_key * key, bool hasStatusCode, bool isError, char * msg, long len);
-bool sendFromBuffer(struct selector_key * key);
-bool readAndParse(struct selector_key * key);
+
 
 #endif // PROTOS_TP_MANAGERSERVER_H
