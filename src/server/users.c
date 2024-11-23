@@ -6,7 +6,6 @@
 
 static user users[MAX_USERS];
 static int usersCount = 0;
-static int adminCount = 0;
 
 //----------------------------------------Private functions-----------------------------------------
 static int getIndexOf(const char* username) {
@@ -52,6 +51,7 @@ int initializeRegisteredUsers() {
 
     char line[1024];
 
+    int adminFound = -1;
     while (fgets(line, sizeof(line), file)) {
         if (line[0] == '\n' || line[0] == '\r') {
             continue;
@@ -62,25 +62,24 @@ int initializeRegisteredUsers() {
         char *roleStr = strtok(NULL, "\n");
 
         if (username && password && roleStr && usersCount < MAX_USERS) {
+            if(strcmp(roleStr, "1") == 0){
+                if(strcmp(username, DEFAULT_ADMIN_USERNAME) == 0){
+                    adminFound = 1;
+                }
+                users[usersCount].role = ROLE_ADMIN;
+            } else{
+                users[usersCount].role = ROLE_USER;
+            }
             strncpy(users[usersCount].username, username, USERS_MAX_USERNAME_LENGTH);
             users[usersCount].username[USERS_MAX_USERNAME_LENGTH] = '\0';
             strncpy(users[usersCount].password, password, USERS_MAX_PASSWORD_LENGTH);
             users[usersCount].password[USERS_MAX_PASSWORD_LENGTH] = '\0';
-            if(strcmp(roleStr, "1") == 0){
-                users[usersCount].role = ROLE_ADMIN;
-                adminCount++;
-            } else{
-                users[usersCount].role = ROLE_USER;
-            }
             usersCount++;
         }
     }
 
-    if(adminCount == 0){
-        strncpy(users[usersCount].username, DEFAULT_ADMIN_USERNAME, USERS_MAX_USERNAME_LENGTH);
-        strncpy(users[usersCount].password, DEFAULT_ADMIN_PASSWORD, USERS_MAX_PASSWORD_LENGTH);
-        users[usersCount].role = ROLE_ADMIN;
-        usersCount++;
+    if(adminFound < 0){
+        usersCreate(DEFAULT_ADMIN_USERNAME, DEFAULT_ADMIN_PASSWORD, ROLE_ADMIN);
     }
 
     fclose(file);
