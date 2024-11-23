@@ -7,6 +7,9 @@
 
 #define USERS_MAX_USERNAME_LENGTH 255
 #define USERS_MAX_PASSWORD_LENGTH 255
+#define DEFAULT_ADMIN_USERNAME "admin"
+#define DEFAULT_ADMIN_PASSWORD "admin"
+
 #define MAX_USERS 10
 
 typedef enum {ROLE_USER = 0, ROLE_ADMIN = 1} Role;
