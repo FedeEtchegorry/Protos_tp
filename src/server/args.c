@@ -78,7 +78,7 @@ parse_args(const int argc, char** argv, struct pop3Args* args) {
     args->socks_addr = "::";
     args->socks_port = 1080;
 
-    args->mng_addr = "127.0.0.1";
+    args->mng_addr = "::";
     args->mng_port = 8080;
 
     args->maildir = NULL;

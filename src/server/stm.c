@@ -4,18 +4,21 @@
  */
 #include <stdlib.h>
 #include "stm.h"
-
+#include <stdio.h>
 #define N(x) (sizeof(x)/sizeof((x)[0]))
 
 void
 stm_init(struct state_machine *stm) {
     // verificamos que los estados son correlativos, y que están bien asignados.
+    fprintf(stdout, "ENTRANDO FUNCION: %s(?)\n", __func__);
     for(unsigned i = 0 ; i <= stm->max_state; i++) {
         if(i != stm->states[i].state) {
+            fprintf(stdout, "Fallo: %d-%d de state\n", i, stm->states[i].state);
             abort();
         }
+        fprintf(stdout, "Ciclo: %d de state\n", i);
     }
-
+    fprintf(stdout, "LINEA: %d\n", __LINE__);
     if(stm->initial < stm->max_state) {
         stm->current = NULL;
     } else {

@@ -24,7 +24,7 @@ unsigned readOnReady(struct selector_key * key) {
   bool isFinished = readAndParse(key);
   if (isFinished) {
     printf("Entrando a read finished\n");
-    unsigned next;
+    unsigned next = UNKNOWN;
     switch (stm_state(&data->stateMachine)) {
     case AUTHORIZATION:
       next = authOnReadReady(key);
@@ -44,7 +44,7 @@ unsigned writeOnReady(struct selector_key * key) {
   userData * data = ATTACHMENT_USER(key);
   bool isFinished = sendFromBuffer(key);
   if (isFinished) {
-    unsigned next;
+    unsigned next = UNKNOWN;
     switch (stm_state(&data->stateMachine)) {
     case GREETINGS:
       next = AUTHORIZATION;

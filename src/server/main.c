@@ -12,6 +12,7 @@
 #include "args.h"
 #include "transaction.h"
 #include "users.h"
+#include "managerServer.h"
 
 #define DEFAULT_PORT 1080
 #define MAX_PENDING_CONNECTION_REQUESTS 5
@@ -26,37 +27,45 @@ static void sigterm_handler(const int signal) {
 }
 
 int main(const int argc, char** argv) {
+
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
     close(STDIN_FILENO);
 
-    //-------------------Levantar usuarios ya registrados del archivos users.csv ---------------------
+    //------------------------- Registro el sigHandler para la terminacion del programa ---------------
 
-    if(initializeRegisteredUsers() < 0)
-    {
+    signal(SIGTERM, sigterm_handler);
+    signal(SIGINT, sigterm_handler);
+
+    //------------------- Levantar usuarios ya registrados del archivos users.csv ---------------------
+
+    if (initializeRegisteredUsers() < 0) {
         fprintf(stderr, "An error has occurred while fetching registered users.\n");
         return -1;
     }
 
-    //--------------------------Parsear argumentos-----------------
+    //-------------------------- Parsear argumentos ---------------------------------------------------
     struct pop3Args args;
     parse_args(argc, argv, &args);
 
-    //Defined here to be used in finally
-    char* err_msg = NULL;
+    char* err_msg = NULL;   // Defined here to be used in finally
     selector_status ss = SELECTOR_SUCCESS;
     int server = -1;
     fd_selector selector = NULL;
 
-    for (unsigned int i = 0; i < args.nusers; i++)
+    for (unsigned int i = 0; i < args.nusers; i++) {
         usersCreate(args.users[i].name, args.users[i].pass, ROLE_USER);
+    }
 
     if (args.maildir == NULL) {
         err_msg = "No maildir specified";
         goto finally;
     }
+
     initMaildir(args.maildir);
-    //--------------------------Defino estructura para el socket para soportar IPv6--------
+
+    //-------------------------- Defino estructura para el socket para soportar IPv6 --------
+
     struct sockaddr_in6 addr = {0};
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htons(args.socks_port);
@@ -64,8 +73,20 @@ int main(const int argc, char** argv) {
         err_msg = "Invalid IPv6 address";
         goto finally;
     }
+    //-------------------------- Defino estructura para el socket del MANAGER  ---------------------------
+
+    int managerServer = -1;
+    struct sockaddr_in6 managerAddr = {0};
+    managerAddr.sin6_family = AF_INET6;
+    managerAddr.sin6_port = htons(args.mng_port);
+
+    if (inet_pton(AF_INET6, args.mng_addr, &managerAddr.sin6_addr) != 1) {
+        err_msg = "Invalid IPv6 address for Manager";
+        goto finally;
+    }
 
     //-------------------------Abro socket y consigo el fd---------------------------------
+
     server = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
     if (server < 0) {
         err_msg = "unable to create socket";
@@ -75,6 +96,17 @@ int main(const int argc, char** argv) {
     fprintf(stdout, "Listening on TCP port %d\n", args.socks_port);
 
     setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
+
+    //-------------------------Abro socket para manager y consigo el fd---------------------
+    managerServer = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+    if (managerServer < 0) {
+        err_msg = "unable to create manager socket";
+        goto finally;
+    }
+
+    fprintf(stdout, "Listening on TCP port %d for manager server\n", args.mng_port);
+
+    setsockopt(managerServer, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
 
     //-------------------------Bindeo el socket con la estructura creada-------------------
     if (bind(server, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
@@ -87,9 +119,17 @@ int main(const int argc, char** argv) {
         goto finally;
     }
 
-    //-------------------------Registro el sigHandler para la terminacion del programa------
-    signal(SIGTERM, sigterm_handler);
-    signal(SIGINT, sigterm_handler);
+    //-------------------------Bindeo el socket del MANAGER con la estructura creada---------
+
+    if (bind(managerServer, (struct sockaddr*)&managerAddr, sizeof(managerAddr)) < 0) {
+        err_msg = "unable to bind socket for manager";
+        goto finally;
+    }
+
+    if (listen(managerServer, MAX_PENDING_CONNECTION_REQUESTS) < 0) {
+        err_msg = "unable to listen (manager)";
+        goto finally;
+    }
 
     //-------------------------Inicializo el selector---------------------------------------
     if (selector_fd_set_nio(server) == -1) {
@@ -124,6 +164,27 @@ int main(const int argc, char** argv) {
     };
 
     ss = selector_register(selector, server, &passive_socket, OP_READ, NULL);
+    if (ss != SELECTOR_SUCCESS) {
+        err_msg = "registering fd";
+        goto finally;
+    }
+
+    //------------------------- Inicializo el selector del MANAGER ------------------------------------------
+
+    if (selector_fd_set_nio(managerServer) == -1) {
+        err_msg = "getting server socket flags";
+        goto finally;
+    }
+
+    //-----------------------------Registro a mi socket pasivo para que acepte conexiones---------------------
+    const fd_handler passive_socket_manager = {
+        .handle_read = manager_passive_accept,
+        .handle_write = NULL,
+        .handle_close = NULL,
+    };
+
+    ss = selector_register(selector, managerServer, &passive_socket_manager, OP_READ, NULL);
+
     if (ss != SELECTOR_SUCCESS) {
         err_msg = "registering fd";
         goto finally;
