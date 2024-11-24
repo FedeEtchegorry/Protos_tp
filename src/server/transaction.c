@@ -284,8 +284,10 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
     switch (data->manager_data.parser.method) {
     case DATA:
         get_stored_data();
+        break;
     case QUIT:
         return UPDATE;
+        break;
     default:
         handleUnknown(key);
     }
