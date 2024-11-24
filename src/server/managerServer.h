@@ -22,9 +22,8 @@
 #define INVALID_METHOD "Invalid method"
 
 
-
 typedef struct managerData {
-  struct userData manager_data;
+    userData manager_data;
 } managerData;
 
 

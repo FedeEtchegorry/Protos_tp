@@ -15,14 +15,8 @@ struct manager_data{
     char** user_list;
 };
 
-static struct manager_data manager={
-    .total_connections=0,
-    .connected_now=0,
-    .total_transferred_bytes=0,
-    .total_users=0,
-    .user_list=NULL,
+static struct manager_data manager = {0};
 
-};
 
 //----------------------------------------Private functions-----------------------------------------
 static void sum_to_connections(char* username){
@@ -74,14 +68,11 @@ void free_print_data(){
     free(manager.user_list);
 }
 
-
-
 /*
  * total_connections; total_transferred_bytes; total_users\n
  */
 int get_stored_data(){
-    fprintf(stdout, "Entrando en función: %s(?)\n", __func__);
-  fprintf(stdout, "LINEA: %d\n", __LINE__);
+
     FILE *file = fopen(HISTORIC_DATA_FILE, "r");
     if (!file) {
         file = fopen(HISTORIC_DATA_FILE, "w");

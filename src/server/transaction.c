@@ -15,6 +15,7 @@
 #include "parserUtils.h"
 #include "managerParser.h"
 #include "pop3Parser.h"
+#include "manager.h"
 
 //------------------------------------------------------Private Functions------------------------------------------
 
@@ -133,9 +134,13 @@ static void handleDelete(struct selector_key* key) {
 }
 
 static void handleStat(struct selector_key* key) {
+    fprintf(stdout, "Archivo: %s, función: %s, linea: %d\n", __FILE__, __func__, __LINE__);
     clientData* data = ATTACHMENT(key);
     unsigned totalOctets = 0;
     unsigned totalEmail = 0;
+
+    fprintf(stdout, "Data: %p\n", (void*)&data->mailCount);
+
     for (unsigned i = 0; i < data->mailCount; i++)
         if (!data->mails[i]->deleted) {
             totalEmail++;
@@ -278,7 +283,7 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
     managerData* data = ATTACHMENT_MANAGER(key);
     switch (data->manager_data.parser.method) {
     case DATA:
-        handleData(key);
+        get_stored_data();
     case QUIT:
         return UPDATE;
     default:
@@ -286,4 +291,3 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
     }
     return TRANSACTION;
 }
-

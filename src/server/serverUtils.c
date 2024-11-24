@@ -84,7 +84,7 @@ unsigned readOnReadyManager(struct selector_key * key) {
       next = authOnReadReady(key);
       break;
     case MANAGER_TRANSACTION:
-      next= transactionOnReadReady(key);
+      next= transactionManagerOnReadReady(key);
       break;
     }
     resetParser(&data->parser);

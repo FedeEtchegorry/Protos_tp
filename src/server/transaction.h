@@ -14,5 +14,6 @@ void transactionOnArrival(const unsigned int state, struct selector_key *key);
 unsigned transactionOnReadReady(struct selector_key *key);
 
 void transactionOnArrivalForManager(const unsigned int state, struct selector_key* key);
+unsigned transactionManagerOnReadReady(struct selector_key* key);
 
 #endif //TRANSACTION_H
