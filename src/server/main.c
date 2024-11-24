@@ -173,7 +173,7 @@ int main(const int argc, char** argv) {
     //----------------------------- CLIENT: Registro a mi socket pasivo para que acepte conexiones ---------------------
 
     const fd_handler clientPassiveSocket = {
-        .handle_read = pop3_passive_accept,
+        .handle_read = pop3PassiveAccept,
         .handle_write = NULL,
         .handle_close = NULL,
     };

@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "../serverConfigs.h"
 #include "../core/users.h"
 
 struct manager_data {

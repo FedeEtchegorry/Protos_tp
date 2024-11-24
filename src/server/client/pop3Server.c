@@ -1,4 +1,4 @@
-#include "POP3Server.h"
+#include "pop3Server.h"
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -52,6 +52,7 @@ static const struct state_definition stateHandlers[] = {
 //----------------------------------- Struct to storage relevant info for each client in selectorKey -------------------
 
 clientData* newClientData(const struct sockaddr_storage clientAddress) {
+
     clientData* clientData = calloc(1, sizeof(struct clientData));
 
     clientData->data.stateMachine.initial = GREETINGS;
@@ -61,29 +62,51 @@ clientData* newClientData(const struct sockaddr_storage clientAddress) {
 
     uint8_t* readBuffer = malloc(BUFFER_SIZE);
     uint8_t* writeBuffer = malloc(BUFFER_SIZE);
+
     buffer_init(&clientData->data.readBuffer, BUFFER_SIZE, readBuffer);
     buffer_init(&clientData->data.writeBuffer, BUFFER_SIZE, writeBuffer);
-    const methodsMap * map = getPop3Methods();
+
+    const methodsMap *map = getPop3Methods();
+
     parserInit(&clientData->data.parser, map);
 
     clientData->data.currentUsername = NULL;
     clientData->data.isAuth = false;
     clientData->data.closed = false;
-
     clientData->mailCount = 0;
-
     clientData->data.sockaddrStorage = clientAddress;
 
     return clientData;
 }
 
+void freeClientData(struct clientData** clientData) {
+
+    if (clientData == NULL || *clientData == NULL) {
+        return;
+    }
+    struct clientData *oldClientData = *clientData;
+    *clientData = NULL;
+
+    if ((*clientData)->data.readBuffer.data != NULL) {
+        free(oldClientData->data.readBuffer.data);
+        oldClientData->data.readBuffer.data = NULL;
+    }
+    if ((*clientData)->data.writeBuffer.data != NULL) {
+        free(oldClientData->data.writeBuffer.data);
+        oldClientData->data.writeBuffer.data = NULL;
+    }
+}
+
 //------------------------------ Passive Socket ------------------------------------------------------------------------
 
-void pop3_passive_accept(struct selector_key* key) {
+void pop3PassiveAccept(struct selector_key* key) {
+
     struct sockaddr_storage client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
+    clientData* clientData = NULL;
 
     const int client = accept(key->fd, (struct sockaddr*)&client_addr, &client_addr_len);
+
     if (client == -1) {
         goto fail;
     }
@@ -92,15 +115,20 @@ void pop3_passive_accept(struct selector_key* key) {
         goto fail;
     }
 
-    clientData* clientData = newClientData(client_addr);
+    clientData = newClientData(client_addr);
+
     if (SELECTOR_SUCCESS != selector_register(key->s, client, getHandler(), OP_WRITE, clientData)) {
         goto fail;
     }
-    return;
 
+    return;
 fail:
     if (client != -1) {
         close(client);
+        // Registrar con matrics
+    }
+    if (clientData != NULL) {
+        freeClientData(&clientData);
     }
 }
 
