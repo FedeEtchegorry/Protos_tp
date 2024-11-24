@@ -7,6 +7,7 @@
 #include <sys/socket.h>  // socket
 #include <netinet/in.h>
 
+#include "serverConfigs.h"
 #include "POP3Server.h"
 #include "selector.h"
 #include "args.h"
@@ -14,15 +15,11 @@
 #include "users.h"
 #include "managerServer.h"
 
-#define DEFAULT_PORT 1080
-#define MAX_PENDING_CONNECTION_REQUESTS 5
-#define SELECTOR_SIZE 1024
-
-
 static bool done = false;
 
 static void sigterm_handler(const int signal) {
-    printf("signal %d, cleaning up and exiting\n", signal);
+
+    printf("Signal %d, cleaning up and exiting...\n", signal);
     done = true;
 }
 
@@ -32,12 +29,12 @@ int main(const int argc, char** argv) {
     setvbuf(stderr, NULL, _IONBF, 0);
     close(STDIN_FILENO);
 
-    //------------------------- Registro el sigHandler para la terminacion del programa ---------------
+    //------------------------- Registro el sigHandler para la terminación del programa --------------------------------
 
     signal(SIGTERM, sigterm_handler);
     signal(SIGINT, sigterm_handler);
 
-    //------------------- Levantar usuarios ya registrados del archivos users.csv ---------------------
+    //------------------- Levantar usuarios ya registrados de un archivo -----------------------------------------------
 
     if (initializeRegisteredUsers() < 0) {
         fprintf(stderr, "An error has occurred while fetching registered users.\n");

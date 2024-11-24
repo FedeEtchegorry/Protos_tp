@@ -6,7 +6,6 @@
 #include <stdlib.h>
 
 #define HISTORIC_DATA_FILE "historic.csv"
-#define USERS_MAX_USERNAME_LENGTH 255 //COMBINAR CON EL DE USERS.C
 
 struct manager_data{
     long int total_connections;
@@ -81,6 +80,8 @@ void free_print_data(){
  * total_connections; total_transferred_bytes; total_users\n
  */
 int get_stored_data(){
+    fprintf(stdout, "Entrando en función: %s(?)\n", __func__);
+  fprintf(stdout, "LINEA: %d\n", __LINE__);
     FILE *file = fopen(HISTORIC_DATA_FILE, "r");
     if (!file) {
         file = fopen(HISTORIC_DATA_FILE, "w");
@@ -116,5 +117,6 @@ int store_data_into_file(){
     }
     fprintf(file, "%lu;%lu;%lu\n", manager.total_connections, manager.total_transferred_bytes, manager.total_users);
     fclose(file);
+
     return 0;
 }

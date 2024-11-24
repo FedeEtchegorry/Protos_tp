@@ -9,8 +9,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
-
 #define BUFFER_SIZE 8192
 
 #define SUCCESS_MSG "+OK "
