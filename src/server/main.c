@@ -11,9 +11,9 @@
 #include "POP3Server.h"
 #include "selector.h"
 #include "args.h"
-#include "transaction.h"
 #include "users.h"
 #include "managerServer.h"
+#include "transaction.h"
 
 static bool done = false;
 
@@ -34,70 +34,77 @@ int main(const int argc, char** argv) {
     signal(SIGTERM, sigterm_handler);
     signal(SIGINT, sigterm_handler);
 
-    //------------------- Levantar usuarios ya registrados de un archivo -----------------------------------------------
+    //------------------------- Levantar usuarios ya registrados de un archivo -----------------------------------------
 
     if (initializeRegisteredUsers() < 0) {
         fprintf(stderr, "An error has occurred while fetching registered users.\n");
         return -1;
     }
 
-    //-------------------------- Parsear argumentos ---------------------------------------------------
-    struct pop3Args args;
-    parse_args(argc, argv, &args);
+    //------------------------- Parsear argumentos ---------------------------------------------------------------------
 
-    char* err_msg = NULL;   // Defined here to be used in finally
-    selector_status ss = SELECTOR_SUCCESS;
-    int server = -1;
-    fd_selector selector = NULL;
+    struct pop3Args args;
+    selector_status selectorStatus = SELECTOR_SUCCESS;
+    char* errMsg = "?";   // Defined here to be used in finally
+
+    parse_args(argc, argv, &args);
 
     for (unsigned int i = 0; i < args.nusers; i++) {
         usersCreate(args.users[i].name, args.users[i].pass, ROLE_USER);
     }
 
     if (args.maildir == NULL) {
-        err_msg = "No maildir specified";
+        errMsg = "No maildir specified";
         goto finally;
     }
 
     initMaildir(args.maildir);
 
-    //-------------------------- Defino estructura para el socket para soportar IPv6 --------
+    //------------------------- CLIENT: Defino estructura para el socket para soportar IPv6 ----------------------------
 
     struct sockaddr_in6 addr = {0};
+    int clientServer = -1;
+
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htons(args.socks_port);
+
     if (inet_pton(AF_INET6, args.socks_addr, &addr.sin6_addr) != 1) {
-        err_msg = "Invalid IPv6 address";
+        errMsg = "Invalid IPv6 address for Client Server";
         goto finally;
     }
-    //-------------------------- Defino estructura para el socket del MANAGER  ---------------------------
+
+    //-------------------------- MANAGER: Defino estructura para el socket para soportar IPv6  -------------------------
 
     int managerServer = -1;
     struct sockaddr_in6 managerAddr = {0};
+
     managerAddr.sin6_family = AF_INET6;
     managerAddr.sin6_port = htons(args.mng_port);
 
     if (inet_pton(AF_INET6, args.mng_addr, &managerAddr.sin6_addr) != 1) {
-        err_msg = "Invalid IPv6 address for Manager";
+        errMsg = "Invalid IPv6 address for Manager Server";
         goto finally;
     }
 
-    //-------------------------Abro socket y consigo el fd---------------------------------
+    //------------------------- CLIENT: Abro socket y consigo el fd ----------------------------------------------------
 
-    server = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
-    if (server < 0) {
-        err_msg = "unable to create socket";
+    clientServer = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+
+    if (clientServer < 0) {
+        errMsg = "Unable to create socket";
         goto finally;
     }
 
     fprintf(stdout, "Listening on TCP port %d\n", args.socks_port);
 
-    setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
+    setsockopt(clientServer, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
 
-    //-------------------------Abro socket para manager y consigo el fd---------------------
+    //------------------------- MANAGER: Abro socket y consigo el fd ---------------------------------------------------
+
     managerServer = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+
     if (managerServer < 0) {
-        err_msg = "unable to create manager socket";
+        errMsg = "Unable to create manager socket";
         goto finally;
     }
 
@@ -105,34 +112,43 @@ int main(const int argc, char** argv) {
 
     setsockopt(managerServer, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
 
-    //-------------------------Bindeo el socket con la estructura creada-------------------
-    if (bind(server, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-        err_msg = "unable to bind socket";
+    //------------------------- CLIENT: Bindeo el socket con la estructura creada --------------------------------------
+
+    if (bind(clientServer, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        errMsg = "Unable to bind socket for Client Server";
         goto finally;
     }
 
-    if (listen(server, MAX_PENDING_CONNECTION_REQUESTS) < 0) {
-        err_msg = "unable to listen";
+    if (listen(clientServer, MAX_PENDING_CONNECTION_REQUESTS) < 0) {
+        errMsg = "Unable to listen (client)";
         goto finally;
     }
 
-    //-------------------------Bindeo el socket del MANAGER con la estructura creada---------
+    if (selector_fd_set_nio(clientServer) == -1) {
+        errMsg = "Unable to set non-blocking mode for fd of Client Server";
+        goto finally;
+    }
+
+    //------------------------- MANAGER: Bindeo el socket del MANAGER con la estructura creada -------------------------
 
     if (bind(managerServer, (struct sockaddr*)&managerAddr, sizeof(managerAddr)) < 0) {
-        err_msg = "unable to bind socket for manager";
+        errMsg = "Unable to bind socket for Manager Server";
         goto finally;
     }
 
     if (listen(managerServer, MAX_PENDING_CONNECTION_REQUESTS) < 0) {
-        err_msg = "unable to listen (manager)";
+        errMsg = "Unable to listen (manager)";
         goto finally;
     }
 
-    //-------------------------Inicializo el selector---------------------------------------
-    if (selector_fd_set_nio(server) == -1) {
-        err_msg = "getting server socket flags";
+    if (selector_fd_set_nio(managerServer) == -1) {
+        errMsg = "Unable to set non-blocking mode for fd of Manager Server";
         goto finally;
     }
+
+    //-------------------------- Inicializo el selector ----------------------------------------------------------------
+
+    fd_selector selector = NULL;
 
     const struct selector_init conf = {
         .signal = SIGALRM,
@@ -143,79 +159,88 @@ int main(const int argc, char** argv) {
     };
 
     if (selector_init(&conf) != 0) {
-        err_msg = "initializing selector";
+        errMsg = "Initializing selector";
         goto finally;
     }
 
     selector = selector_new(SELECTOR_SIZE);
+
     if (selector == NULL) {
-        err_msg = "unable to create selector";
+        errMsg = "Unable to create selector";
         goto finally;
     }
 
-    //-----------------------------Registro a mi socket pasivo para que acepte conexiones---------------------
-    const fd_handler passive_socket = {
+    //----------------------------- CLIENT: Registro a mi socket pasivo para que acepte conexiones ---------------------
+
+    const fd_handler clientPassiveSocket = {
         .handle_read = pop3_passive_accept,
         .handle_write = NULL,
         .handle_close = NULL,
     };
 
-    ss = selector_register(selector, server, &passive_socket, OP_READ, NULL);
-    if (ss != SELECTOR_SUCCESS) {
-        err_msg = "registering fd";
+    selectorStatus = selector_register(selector, clientServer, &clientPassiveSocket, OP_READ, NULL);
+
+    if (selectorStatus != SELECTOR_SUCCESS) {
+        errMsg = "Registering Client Server fd";
         goto finally;
     }
 
-    //------------------------- Inicializo el selector del MANAGER ------------------------------------------
+    //----------------------------- MANAGER: Registro a mi socket pasivo para que acepte conexiones --------------------
 
-    if (selector_fd_set_nio(managerServer) == -1) {
-        err_msg = "getting server socket flags";
-        goto finally;
-    }
-
-    //-----------------------------Registro a mi socket pasivo para que acepte conexiones---------------------
-    const fd_handler passive_socket_manager = {
+    const fd_handler managerPassiveSocket = {
         .handle_read = manager_passive_accept,
         .handle_write = NULL,
         .handle_close = NULL,
     };
 
-    ss = selector_register(selector, managerServer, &passive_socket_manager, OP_READ, NULL);
+    selectorStatus = selector_register(selector, managerServer, &managerPassiveSocket, OP_READ, NULL);
 
-    if (ss != SELECTOR_SUCCESS) {
-        err_msg = "registering fd";
+    if (selectorStatus != SELECTOR_SUCCESS) {
+        errMsg = "Registering Manager Server fd";
         goto finally;
     }
 
-    //----------------------------Itero infinitamente haciendo select------------------------------------------
+    //---------------------------- Itero infinitamente haciendo select -------------------------------------------------
+
     while (!done) {
-        ss = selector_select(selector);
-        if (ss != SELECTOR_SUCCESS) {
-            err_msg = "serving";
+
+        selectorStatus = selector_select(selector);
+
+        if (selectorStatus != SELECTOR_SUCCESS) {
+            errMsg = "Serving";
             goto finally;
         }
     }
 
-    err_msg = "Closing";
+    errMsg = "Closing";
+
+    //---------------------------- Terminación del programa ------------------------------------------------------------
 
     int ret = 0;
+
 finally:
-    if (ss != SELECTOR_SUCCESS) {
-        fprintf(stderr, "%s: %s\n", (err_msg == NULL) ? "" : err_msg,
-                ss == SELECTOR_IO
-                    ? strerror(errno)
-                    : selector_error(ss));
+
+    if (selectorStatus != SELECTOR_SUCCESS) {
+        fprintf(stderr, "%s: %s\n", errMsg, selectorStatus == SELECTOR_IO ? strerror(errno) : selector_error(selectorStatus));
         ret = 2;
     } else {
-        perror(err_msg);
+        perror(errMsg);
         ret = 1;
     }
 
-    if(selector != NULL)
+    if (selector != NULL) {
         selector_destroy(selector);
+    }
+
     selector_close();
-    if(server >= 0)
-        close(server);
+
+    if (clientServer >= 0) {
+        close(clientServer);
+    }
+
+    if (managerServer >= 0) {
+        close(managerServer);
+    }
 
     return ret;
 }
