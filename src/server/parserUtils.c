@@ -1,6 +1,4 @@
 #include "parserUtils.h"
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,7 +70,6 @@ void processBuffer(parser *parser) {
   printf("Command: %s, Method: %d, Arg: %s\n",
          command, parser->method, parser->arg ? parser->arg : "(none)");
 }
-
 
 void parse_feed(parser * parser, uint8_t c) {
   buffer_write(&parser->buffer, c);

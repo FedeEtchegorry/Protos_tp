@@ -1,13 +1,12 @@
 #include "manager.h"
-#include "users.h"
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
 #include <stdlib.h>
 
-#define HISTORIC_DATA_FILE "historic.csv"
+#include "../core/users.h"
 
-struct manager_data{
+struct manager_data {
     long int total_connections;
     long int connected_now;
     long int total_transferred_bytes;
@@ -17,8 +16,8 @@ struct manager_data{
 
 static struct manager_data manager = {0};
 
-
 //----------------------------------------Private functions-----------------------------------------
+
 static void sum_to_connections(char* username){
     manager.total_connections+=1;
     manager.connected_now+=1;
@@ -36,16 +35,21 @@ static void remove_connected_now(){
 static void sum_to_transferred_bytes(long int bytes){
     manager.total_transferred_bytes+=bytes;
 }
+
 //----------------------------------------Public functions-----------------------------------------
+
 void add_connection(char* username){
     sum_to_connections(username);
 }
+
 void remove_connection(){
     remove_connected_now();
 }
+
 void add_transferred_bytes(long int bytes){
     sum_to_transferred_bytes(bytes);
 }
+
 const struct manager_data* print_data() {
     if (!manager.user_list)
         free_print_data();
@@ -61,6 +65,7 @@ const struct manager_data* print_data() {
     getUsers(manager.user_list);
     return &manager;
 }
+
 void free_print_data(){
     for (int i = 0; i < manager.total_users; i++) {
         free(manager.user_list[i]);
@@ -71,7 +76,8 @@ void free_print_data(){
 /*
  * total_connections; total_transferred_bytes; total_users\n
  */
-int get_stored_data(){
+int get_stored_data() {
+
     FILE *file = fopen(HISTORIC_DATA_FILE, "r");
     if (!file) {
         file = fopen(HISTORIC_DATA_FILE, "w");
@@ -101,7 +107,8 @@ int get_stored_data(){
     return 0;
 }
 
-int store_data_into_file(){
+int store_data_into_file() {
+
     FILE *file = fopen(HISTORIC_DATA_FILE, "w+");
     if (!file) {
         fprintf(stderr,"Error al abrir el archivo users.csv");

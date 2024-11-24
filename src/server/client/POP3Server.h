@@ -1,18 +1,16 @@
 #ifndef POP3STATEMACHINE_H
 #define POP3STATEMACHINE_H
 
-#include <sys/socket.h>
+#include "../serverUtils.h"
+#include "../core/selector.h"
+#include "../core/transaction.h"
 
-#include "transaction.h"
-#include "pop3Parser.h"
-#include "serverUtils.h"
-#include "buffer.h"
-#include "stm.h"
+#define SUCCESS_MSG "+OK "
+#define ERROR_MSG   "-ERR "
 
+//------------------------------------ Defines to be used by all modules -----------------------------------------------
 
-//------------------------------------Defines to be used by all modules-----------------------------------
 #define ATTACHMENT(key) ((clientData *)(key->data))
-
 
 #define GREETING "POP3 server ready"
 #define NO_MESSAGE_FOUND "No message found"
@@ -25,11 +23,9 @@
 #define INVALID_METHOD "Invalid method"
 #define MESSAGE_DELETED "Message deleted"
 
-#define MAX_MAILS 50
+#define MAX_MAILS   50
 
 extern char * mailDirectory;
-
-
 
 typedef struct clientData {
     struct userData data;
@@ -37,11 +33,9 @@ typedef struct clientData {
     unsigned mailCount;
 } clientData;
 
+//--------------------------------------------- Public Functions -------------------------------------------------------
 
-
-//---------------------------------------------Public Functions------------------------------------------------
 void initMaildir(const char * directory);
 void pop3_passive_accept(struct selector_key* key);
 
-
-#endif //POP3STATEMACHINE_H
+#endif // POP3STATEMACHINE_H

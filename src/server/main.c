@@ -4,16 +4,16 @@
 #include <signal.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <sys/socket.h>  // socket
+#include <sys/socket.h>
 #include <netinet/in.h>
 
-#include "serverConfigs.h"
-#include "POP3Server.h"
-#include "selector.h"
 #include "args.h"
-#include "users.h"
-#include "managerServer.h"
-#include "transaction.h"
+#include "serverConfigs.h"
+//#include "./core/transaction.h"
+#include "./core/selector.h"
+#include "./core/users.h"
+#include "./client/POP3Server.h"
+#include "./manager/managerServer.h"
 
 static bool done = false;
 

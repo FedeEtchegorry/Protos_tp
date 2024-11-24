@@ -1,8 +1,7 @@
 #ifndef POP3PARSER_H
 #define POP3PARSER_H
 
-#include "buffer.h"
-#include "parserUtils.h"
+#include "../parserUtils.h"
 
 enum methods {
   USER,
@@ -19,4 +18,4 @@ enum methods {
 
 const methodsMap* getPop3Methods();
 
-#endif //POP3PARSER_H
+#endif // POP3PARSER_H

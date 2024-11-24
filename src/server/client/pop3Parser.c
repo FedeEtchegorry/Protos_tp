@@ -1,12 +1,8 @@
 #include "pop3Parser.h"
-
 #include <string.h>
-
-#include "parserUtils.h"
+#include "../core/buffer.h"
 
 #define BUFFER_SIZE 255
-
-
 
 static const methodsMap pop3Methods[] = {
     {"USER", USER}, {"PASS", PASS}, {"LIST", LIST}, {"STAT", STAT},

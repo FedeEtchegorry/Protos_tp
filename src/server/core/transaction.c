@@ -8,19 +8,16 @@
 #include <dirent.h>
 #include <errno.h>
 #include <pthread.h>
+#include "../parserUtils.h"
+#include "../client/POP3Server.h"
+#include "../client/pop3Parser.h"
+#include "../manager/managerServer.h"
+#include "../manager/managerParser.h"
 
-#include "POP3Server.h"
-#include "managerServer.h"
+//------------------------------------------------------ Private Functions ---------------------------------------------
 
-#include "parserUtils.h"
-#include "managerParser.h"
-#include "pop3Parser.h"
-#include "manager.h"
-
-//------------------------------------------------------Private Functions------------------------------------------
-
-#define MAX_AUX_BUFFER_SIZE 255
-#define MAX_DIRENT_SIZE 512
+#define MAX_AUX_BUFFER_SIZE    255
+#define MAX_DIRENT_SIZE        512
 
 static long int checkEmailNumber(struct selector_key* key, long int * result) {
     clientData* data = ATTACHMENT(key);
@@ -159,7 +156,9 @@ static void handleUnknown(struct selector_key* key) {
 static void handleData(struct selector_key* key){
     printf("MENSAJE");
 }
-//---------------------------------------Aux functions-------------------------------------------------
+
+//--------------------------------------- Aux functions ----------------------------------------------------------------
+
 static size_t calculateOctetLength(const char* filePath) {
     FILE* file = fopen(filePath, "rb");
 
@@ -236,7 +235,8 @@ static void loadMails(clientData* data) {
     }
 }
 
-//------------------------------------------------------Public Functions For Pop3----------------------------------
+//------------------------------------------------------ Public Functions For Pop3 -------------------------------------
+
 void transactionOnArrival(const unsigned int state, struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
     createMaildir(data);
@@ -273,7 +273,7 @@ unsigned transactionOnReadReady(struct selector_key* key) {
     return TRANSACTION;
 }
 
-//-------------------------------------------------Public Functions For Manager--------------------------------------
+//------------------------------------------------- Public Functions For Manager ---------------------------------------
 
 void transactionOnArrivalForManager(const unsigned int state, struct selector_key* key){
     selector_set_interest_key(key, OP_READ);

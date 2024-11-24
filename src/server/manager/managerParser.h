@@ -1,7 +1,7 @@
 #ifndef PROTOS_TP_MANAGERPARSER_H
 #define PROTOS_TP_MANAGERPARSER_H
 
-#include "parserUtils.h"
+#include "../parserUtils.h"
 
 enum manager_methods {
   USER_M,

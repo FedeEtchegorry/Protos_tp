@@ -1,23 +1,21 @@
 #include "echoServer.h"
+
 #include <unistd.h>
 #include <netdb.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include "./core/buffer.h"
 
-
-#include "buffer.h"
-#include "selector.h"
-
-#define BUFFER_SIZE 8192
+#define BUFFER_SIZE         8192
 #define MAX_HOSTNAME_LENGTH 255
-#define ATTACHMENT(key) ((buffer *)(key->data))
+#define ATTACHMENT(key)     ((buffer *)(key->data))
 
+//------------------------------- Handlers for selector -----------------------------------------------
 
-//-------------------------------Handlers for selector-----------------------------------------------
 static void echo_read(struct selector_key* key);
 static void echo_write(struct selector_key* key);
 static void echo_block(struct selector_key* key);
 static void echo_close(struct selector_key* key);
+
 static const fd_handler echo_handler = {
     .handle_read = echo_read,
     .handle_write = echo_write,
@@ -25,8 +23,8 @@ static const fd_handler echo_handler = {
     .handle_block = echo_block,
 };
 
+//------------------------------ Passive Socket --------------------------------------------------------
 
-//------------------------------Passive Socket--------------------------------------------------------
 void passive_accept(struct selector_key* key) {
     struct sockaddr_storage client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
@@ -56,7 +54,8 @@ fail:
     }
 }
 
-//----------------------------------Implementation of handlers-------------------------------------------
+//---------------------------------- Implementation of handlers -------------------------------------------
+
 static void echo_read(struct selector_key* key) {
     buffer* bufferData = ATTACHMENT(key);
     size_t size;

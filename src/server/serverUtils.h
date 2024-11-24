@@ -1,11 +1,12 @@
 #ifndef PROTOS_TP_SERVERUTILS_H
 #define PROTOS_TP_SERVERUTILS_H
 
-#include "parserUtils.h"
-#include "stm.h"
+#include <stdbool.h>
 #include <sys/socket.h>
+#include "parserUtils.h"
+#include "./core/stm.h"
+#include "./core/buffer.h"
 
-#define BUFFER_SIZE           8192
 #define SUCCESS_MSG           "+OK "
 #define ERROR_MSG             "-ERR "
 #define ATTACHMENT_USER(key)  ((userData *)(key->data))

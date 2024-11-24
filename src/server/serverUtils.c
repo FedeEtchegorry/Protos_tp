@@ -1,21 +1,13 @@
-#include "serverUtils.h"
-#include "POP3Server.h"
-#include "auth.h"
-#include "buffer.h"
-#include "stm.h"
-#include "transaction.h"
-#include <stdbool.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "serverUtils.h"
+#include "./logging/auth.h"
+#include "./client/pop3Parser.h"
+#include "./client/POP3Server.h"
 
-#define BUFFER_SIZE 8192
+//------------------------------------- Generic handler (just to support pipelining)-------------------------
 
-#define SUCCESS_MSG "+OK "
-#define ERROR_MSG "-ERR "
-
-
-//-------------------------------------Generic handler (just to support pipelining)-------------------------
 unsigned readOnReady(struct selector_key * key) {
   userData * data = ATTACHMENT_USER(key);
   bool isFinished = readAndParse(key);
@@ -72,7 +64,8 @@ unsigned writeOnReady(struct selector_key * key) {
   return stm_state(&data->stateMachine);
 }
 
-//-------------------------------------Generic handler for MANAGER -------------------------
+//------------------------------------- Generic handler for MANAGER -------------------------
+
 unsigned readOnReadyManager(struct selector_key * key) {
   userData * data = ATTACHMENT_USER(key);
   bool isFinished = readAndParse(key);
@@ -127,7 +120,8 @@ unsigned writeOnReadyManager(struct selector_key * key) {
   return stm_state(&data->stateMachine);
 }
 
-//-------------------------------Handlers for selector-----------------------------------------------
+//------------------------------- Handlers for selector -----------------------------------------------
+
 static void server_done(struct selector_key* key) {
   userData * data = ATTACHMENT_USER(key);
   if (data->closed)
@@ -183,7 +177,6 @@ static fd_handler handler = {
 fd_handler* getHandler(){
     return &handler;
 }
-
 
 void writeInBuffer(struct selector_key* key, bool hasStatusCode, bool isError, char* msg, long len) {
   userData * data = ATTACHMENT_USER(key);

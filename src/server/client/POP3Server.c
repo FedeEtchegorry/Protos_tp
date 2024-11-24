@@ -1,33 +1,23 @@
 #include "POP3Server.h"
-
 #include <stdlib.h>
 #include <string.h>
-
-#include "selector.h"
-
 #include <sys/socket.h>
 
-#include "buffer.h"
-#include "stm.h"
 #include "pop3Parser.h"
-#include "greetings.h"
-#include "auth.h"
-#include "transaction.h"
-#include "update.h"
-#include "parserUtils.h"
-#include "serverUtils.h"
+
+#include "../greetings.h"
+#include "../update.h"
+#include "../parserUtils.h"
+#include "../core/buffer.h"
+#include "../core/stm.h"
+#include "../logging/auth.h"
 
 #define BUFFER_SIZE 8192
 
-#define SUCCESS_MSG "+OK "
-#define ERROR_MSG "-ERR "
-
-
 char* mailDirectory = NULL;
 
+//------------------------------------- Array de estados para la stm ---------------------------------------------------
 
-
-//-------------------------------------Array de estados para la stm------------------------------------------
 static const struct state_definition stateHandlers[] = {
     {
         .state = GREETINGS,
@@ -59,7 +49,8 @@ static const struct state_definition stateHandlers[] = {
     }
 };
 
-//-----------------------------------Struct to storage relevant info for each client in selectorKey---------------------
+//----------------------------------- Struct to storage relevant info for each client in selectorKey -------------------
+
 clientData* newClientData(const struct sockaddr_storage clientAddress) {
     clientData* clientData = calloc(1, sizeof(struct clientData));
 
@@ -86,7 +77,8 @@ clientData* newClientData(const struct sockaddr_storage clientAddress) {
     return clientData;
 }
 
-//------------------------------Passive Socket--------------------------------------------------------
+//------------------------------ Passive Socket ------------------------------------------------------------------------
+
 void pop3_passive_accept(struct selector_key* key) {
     struct sockaddr_storage client_addr;
     socklen_t client_addr_len = sizeof(client_addr);

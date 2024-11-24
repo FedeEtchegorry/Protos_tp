@@ -3,15 +3,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../core/users.h"
+#include "../client/POP3Server.h"
+#include "../client/pop3Parser.h"
+#include "../manager/managerParser.h"
+#include "../manager/managerServer.h"
 
-#include "POP3Server.h"
-#include "managerParser.h"
-#include "managerServer.h"
-#include "pop3Parser.h"
-#include "users.h"
+//--------------------------------- Private Functions -------------------------------
 
-//---------------------------------Private
-//definitions-------------------------------
 static void handleUsername(struct selector_key* key) {
     userData * data = ATTACHMENT_USER(key);
     const char* username = data->parser.arg;
@@ -72,7 +71,8 @@ static void handleUnknown(struct selector_key* key) {
     writeInBuffer(key, true, true, INVALID_METHOD, sizeof(INVALID_METHOD) - 1);
 }
 
-//----------------------------------USER Handlers------------------------------------
+//---------------------------------- USER Handlers ------------------------------------
+
 void authOnArrival(const unsigned state, struct selector_key* key) {
     selector_set_interest_key(key, OP_READ);
 }
@@ -93,6 +93,7 @@ unsigned authOnReadReady(struct selector_key* key) {
     }
     return AUTHORIZATION;
 }
+
 unsigned authOnReadReadyAdmin(struct selector_key* key) {
     userData * data = ATTACHMENT_USER(key);
     switch (data->parser.method) {
@@ -109,7 +110,3 @@ unsigned authOnReadReadyAdmin(struct selector_key* key) {
     }
     return MANAGER_AUTHORIZATION;
 }
-
-
-
-

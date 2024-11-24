@@ -1,8 +1,7 @@
 #ifndef PROTOS_TP_PARSERUTILS_H
 #define PROTOS_TP_PARSERUTILS_H
 
-#include "buffer.h"
-
+#include "./core/buffer.h"
 
 enum state {
   READING,
@@ -31,7 +30,5 @@ void parse_feed(parser * parser, uint8_t c);
 void parse(parser * parser, buffer * buffer);
 void resetParser(parser * parser);
 bool parserIsFinished(parser * parser);
-
-
 
 #endif // PROTOS_TP_PARSERUTILS_H

@@ -1,29 +1,19 @@
 #include "managerServer.h"
+#include "../greetings.h"
+#include "../core/transaction.h"
+#include "../core/buffer.h"
+#include "../core/stm.h"
+#include "../core/buffer.h"
+#include "../logging/auth.h"
+#include "../client/pop3Parser.h"
 
-
-#include <stdlib.h>
-#include <string.h>
-
-#include "selector.h"
-
-#include <sys/socket.h>
-
-#include "auth.h"
-#include "buffer.h"
-#include "greetings.h"
-#include "pop3Parser.h"
-#include "stm.h"
-#include "transaction.h"
+#include "manager.h"
 #include "managerParser.h"
-#include "serverUtils.h"
-#include <stdio.h>
 
 #define BUFFER_SIZE 8192
 
-#define SUCCESS_MSG "+OK "
-#define ERROR_MSG "-ERR "
+//------------------------------------- Array de estados para la stm ---------------------------------------------------
 
-//-------------------------------------Array de estados para la stm------------------------------------------
 static const struct state_definition stateHandlers[] = {
     {
         .state = MANAGER_GREETINGS,
@@ -50,8 +40,8 @@ static const struct state_definition stateHandlers[] = {
     }
 };
 
+//----------------------------------- Struct to storage relevant info for the manager in selectorKey -------------------
 
-//-----------------------------------Struct to storage relevant info for the manager in selectorKey---------------------
 managerData * newManagerData(const struct sockaddr_storage managerAddress) {
 
   managerData * managerData = calloc(1, sizeof(struct managerData));
@@ -76,7 +66,8 @@ managerData * newManagerData(const struct sockaddr_storage managerAddress) {
   return managerData;
 }
 
-//------------------------------Passive Socket--------------------------------------------------------
+//------------------------------ Passive Socket ------------------------------------------------------------------------
+
 void manager_passive_accept(struct selector_key* key) {
 
   struct sockaddr_storage manager_addr;

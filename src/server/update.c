@@ -1,8 +1,6 @@
 #include "update.h"
-
 #include <stdio.h>
-
-#include "POP3Server.h"
+#include "./client/POP3Server.h"
 
 #define MAX_AUX_BUFFER_SIZE 255
 
