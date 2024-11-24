@@ -1,11 +1,18 @@
-#import "metrics.h"
-#import <stdlib.h>
-#import <string.h>
+#include "metrics.h"
+#include <stdlib.h>
+#include <string.h>
 
-server_metrics *serverMetricsCreate(server_metrics* metrics) {
+server_metrics *serverMetricsCreate(server_metrics* metrics, size_t *ioReadBufferSize, size_t *ioWriteBufferSize) {
 
     server_metrics *serverMetrics = malloc(sizeof(server_metrics));
+
+    if (serverMetrics == NULL) {
+      return NULL;
+    }
+
     memset(serverMetrics, 0, sizeof(server_metrics));
+    serverMetrics->ioReadBufferSize = ioReadBufferSize;
+    serverMetrics->ioWriteBufferSize = ioWriteBufferSize;
 
     return serverMetrics;
 }

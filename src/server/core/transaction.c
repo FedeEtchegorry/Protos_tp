@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include "../parserUtils.h"
-#include "../client/POP3Server.h"
+#include "../client/pop3Server.h"
 #include "../client/pop3Parser.h"
 #include "../manager/managerServer.h"
 #include "../manager/managerParser.h"

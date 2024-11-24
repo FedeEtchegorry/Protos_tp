@@ -122,6 +122,7 @@ void pop3PassiveAccept(struct selector_key* key) {
     }
 
     return;
+
 fail:
     if (client != -1) {
         close(client);

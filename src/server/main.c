@@ -12,8 +12,9 @@
 //#include "./core/transaction.h"
 #include "./core/selector.h"
 #include "./core/users.h"
-#include "./client/POP3Server.h"
+#include "./client/pop3Server.h"
 #include "./manager/managerServer.h"
+#include "./logging/metrics.h"
 
 static bool done = false;
 

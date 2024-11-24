@@ -4,7 +4,7 @@
 #include "serverUtils.h"
 #include "./logging/auth.h"
 #include "./client/pop3Parser.h"
-#include "./client/POP3Server.h"
+#include "./client/pop3Server.h"
 
 //------------------------------------- Generic handler (just to support pipelining)-------------------------
 

@@ -6,7 +6,7 @@
 #define DEFAULT_PORT                    1080
 #define SELECTOR_SIZE                   1024
 
-#define DEFAULT_BUFFER_SIZE             1024
+#define DEFAULT_IO_BUFFER_SIZE          8096
 #define MAX_PENDING_CONNECTION_REQUESTS 5
 
 
