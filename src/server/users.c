@@ -117,6 +117,13 @@ bool userLogin(const char* username, const char* password) {
         return false;
     return true;
 }
+
+bool userLoginAdmin(const char* username, const char* password){
+    int index = getIndexOf(username);
+    if(index < 0 || strcmp(users[index].password, password) != 0 || !users[index].role)
+        return false;
+    return true;
+}
 void getUsers(char** user_list) {
     for (int i = 0; i < usersCount; i++) {
         strcpy(user_list[i], users[i].username);

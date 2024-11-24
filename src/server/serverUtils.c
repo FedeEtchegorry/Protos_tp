@@ -81,7 +81,7 @@ unsigned readOnReadyManager(struct selector_key * key) {
     unsigned next = UNKNOWN;
     switch (stm_state(&data->stateMachine)) {
     case MANAGER_AUTHORIZATION:
-      next = authOnReadReady(key);
+      next = authOnReadReadyAdmin(key);
       break;
     case MANAGER_TRANSACTION:
       next= transactionManagerOnReadReady(key);

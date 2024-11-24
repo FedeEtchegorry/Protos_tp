@@ -5,22 +5,22 @@
 #include <string.h>
 
 #include "POP3Server.h"
-#include "pop3Parser.h"
 #include "managerParser.h"
+#include "managerServer.h"
+#include "pop3Parser.h"
 #include "users.h"
 
-
-
-//---------------------------------Private definitions-------------------------------
+//---------------------------------Private
+//definitions-------------------------------
 static void handleUsername(struct selector_key* key) {
-    clientData* data = ATTACHMENT(key);
-    const char* username = data->data.parser.arg;
+    userData * data = ATTACHMENT_USER(key);
+    const char* username = data->parser.arg;
     if (username == NULL)
         username = "";
 
-    if (data->data.currentUsername != NULL)
-        free(data->data.currentUsername);
-    data->data.currentUsername = strdup(username);
+    if (data->currentUsername != NULL)
+        free(data->currentUsername);
+    data->currentUsername = strdup(username);
 
     writeInBuffer(key, true, false, NULL, 0);
 }
@@ -45,6 +45,28 @@ static void handlePassword(struct selector_key* key) {
     data->data.isAuth=true;
     writeInBuffer(key, true, false, AUTH_SUCCESS, sizeof(AUTH_SUCCESS) - 1);
 }
+static void handlePasswordAdmin(struct selector_key* key) {
+    managerData * data = ATTACHMENT_MANAGER(key);
+    if (data->manager_data.currentUsername == NULL) {
+        writeInBuffer(key, true, true, NO_USERNAME, sizeof(NO_USERNAME)-1);
+        return;
+    }
+
+    const char* password = data->manager_data.parser.arg;
+    if(password == NULL)
+        password = "";
+
+
+
+    if(!userLoginAdmin(data->manager_data.currentUsername, data->manager_data.parser.arg)) {
+        writeInBuffer(key, true, true, AUTH_FAILED, sizeof(AUTH_FAILED)-1);
+        data->manager_data.currentUsername = NULL;
+        return;
+    }
+
+    data->manager_data.isAuth=true;
+    writeInBuffer(key, true, false, AUTH_SUCCESS, sizeof(AUTH_SUCCESS) - 1);
+}
 
 static void handleUnknown(struct selector_key* key) {
     writeInBuffer(key, true, true, INVALID_METHOD, sizeof(INVALID_METHOD) - 1);
@@ -56,22 +78,37 @@ void authOnArrival(const unsigned state, struct selector_key* key) {
 }
 
 unsigned authOnReadReady(struct selector_key* key) {
-    clientData* data = ATTACHMENT(key);
-    switch (data->data.parser.method) {
-        case USER | USER_M:
+    userData * data = ATTACHMENT_USER(key);
+    switch (data->parser.method) {
+        case USER:
             handleUsername(key);
             break;
-        case PASS | PASS_M:
+        case PASS:
             handlePassword(key);
             break;
-        case QUIT | QUIT_M:
+        case QUIT:
             return DONE;
         default:
             handleUnknown(key);
     }
     return AUTHORIZATION;
 }
-
+unsigned authOnReadReadyAdmin(struct selector_key* key) {
+    userData * data = ATTACHMENT_USER(key);
+    switch (data->parser.method) {
+    case USER_M:
+            handleUsername(key);
+            break;
+    case PASS_M:
+            handlePasswordAdmin(key);
+            break;
+    case QUIT_M:
+            return DONE;
+    default:
+            handleUnknown(key);
+    }
+    return MANAGER_AUTHORIZATION;
+}
 
 
 
