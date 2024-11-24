@@ -12,7 +12,7 @@ typedef struct {
 
 } server_metrics;
 
-void serverMetricsCreate(server_metrics* metrics);
+server_metrics *serverMetricsCreate(server_metrics* metrics);
 
 void serverMetricsFree(server_metrics** metrics);
 
@@ -20,8 +20,8 @@ void serverMetricsRecordNewConection(server_metrics* metrics);
 
 void serverMetricsRecordDropConection(server_metrics* metrics);
 
-void serverMetricsRecordBytesTransferred(server_metrics* metrics);
+void serverMetricsRecordBytesTransferred(server_metrics* metrics, size_t bytes);
 
-void serverMetricsRecordBytesReceived(server_metrics* metrics);
+void serverMetricsRecordBytesReceived(server_metrics* metrics, size_t bytes);
 
 #endif // METRICS_H
