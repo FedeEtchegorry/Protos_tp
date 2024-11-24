@@ -54,9 +54,6 @@ static const struct state_definition stateHandlers[] = {
 //-----------------------------------Struct to storage relevant info for the manager in selectorKey---------------------
 managerData * newManagerData(const struct sockaddr_storage managerAddress) {
 
-  fprintf(stdout, "Entrando en función: %s(?)\n", __func__);
-  fprintf(stdout, "LINEA: %d\n", __LINE__);
-
   managerData * managerData = calloc(1, sizeof(struct managerData));
 
   managerData->manager_data.stateMachine.initial = MANAGER_GREETINGS;

@@ -72,7 +72,6 @@ void free_print_data(){
  * total_connections; total_transferred_bytes; total_users\n
  */
 int get_stored_data(){
-
     FILE *file = fopen(HISTORIC_DATA_FILE, "r");
     if (!file) {
         file = fopen(HISTORIC_DATA_FILE, "w");
@@ -84,7 +83,9 @@ int get_stored_data(){
         return 0;
     }
     char line[30];
+
     while (fgets(line, sizeof(line), file)) {
+
         if (line[0] == '\n' || line[0] == '\r') {
           continue;
         }

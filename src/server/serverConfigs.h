@@ -20,4 +20,6 @@
 #define DEFAULT_ADMIN_PASSWORD            "admin"
 
 // ---------------------------------------------------------------------------------------------------------------------
+// fprintf(stdout, "Archivo: %s, Funcion: %s, Linea: %d\n", __FILE__, __func__, __LINE__);
+
 #endif // SERVER_CONFIGS_H

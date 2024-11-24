@@ -77,14 +77,14 @@ unsigned readOnReadyManager(struct selector_key * key) {
   userData * data = ATTACHMENT_USER(key);
   bool isFinished = readAndParse(key);
   if (isFinished) {
-    printf("Entrando a read finished\n");
+    printf("Entrando a read finished de MANAGER\n");
     unsigned next = UNKNOWN;
     switch (stm_state(&data->stateMachine)) {
     case MANAGER_AUTHORIZATION:
       next = authOnReadReady(key);
       break;
     case MANAGER_TRANSACTION:
-      next= transactionManagerOnReadReady(key);
+      next = transactionManagerOnReadReady(key);
       break;
     }
     resetParser(&data->parser);
