@@ -74,7 +74,60 @@ unsigned writeOnReady(struct selector_key * key) {
   return stm_state(&data->stateMachine);
 }
 
+//-------------------------------------Generic handler for MANAGER -------------------------
+unsigned readOnReadyManager(struct selector_key * key) {
+  userData * data = ATTACHMENT_USER(key);
+  bool isFinished = readAndParse(key);
+  if (isFinished) {
+    printf("Entrando a read finished\n");
+    unsigned next = UNKNOWN;
+    switch (stm_state(&data->stateMachine)) {
+    case MANAGER_AUTHORIZATION:
+      next = authOnReadReady(key);
+      break;
+    case MANAGER_TRANSACTION:
+      next= transactionOnReadReady(key);
+      break;
+    }
+    resetParser(&data->parser);
+    selector_set_interest_key(key, OP_WRITE);
+    return next;
+  }
+  return stm_state(&data->stateMachine);
+}
 
+unsigned writeOnReadyManager(struct selector_key * key) {
+  userData * data = ATTACHMENT_USER(key);
+  bool isFinished = sendFromBuffer(key);
+  if (isFinished) {
+    unsigned next = UNKNOWN;
+    switch (stm_state(&data->stateMachine)) {
+    case MANAGER_GREETINGS:
+      next = MANAGER_AUTHORIZATION;
+      break;
+    case MANAGER_AUTHORIZATION:
+      if (data->isAuth)
+        next = MANAGER_TRANSACTION;
+      else
+        next = MANAGER_AUTHORIZATION;
+      break;
+    case MANAGER_TRANSACTION:
+      next = MANAGER_TRANSACTION;
+      break;
+    }
+
+    if (!buffer_can_read(&data->readBuffer)) {
+      selector_set_interest_key(key, OP_READ);
+      return next;
+    }
+
+    printf("queda algo en el buffer y salto a %d", next);
+    jump(&data->stateMachine, next, key);
+    selector_set_interest_key(key, OP_READ);
+    readOnReady(key);
+  }
+  return stm_state(&data->stateMachine);
+}
 
 //-------------------------------Handlers for selector-----------------------------------------------
 static void server_done(struct selector_key* key) {

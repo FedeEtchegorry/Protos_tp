@@ -26,32 +26,27 @@
 //-------------------------------------Array de estados para la stm------------------------------------------
 static const struct state_definition stateHandlers[] = {
     {
-        .state = GREETINGS,
+        .state = MANAGER_GREETINGS,
         .on_arrival = greetingOnArrivalForManager,
-        .on_write_ready = writeOnReady
+        .on_write_ready = writeOnReadyManager
     },
     {
-        .state = AUTHORIZATION,
+        .state = MANAGER_AUTHORIZATION,
         .on_arrival = authOnArrival,
-        .on_read_ready = readOnReady,
-        .on_write_ready = writeOnReady,
+        .on_read_ready = readOnReadyManager,
+        .on_write_ready = writeOnReadyManager,
     },
     {
-        .state = TRANSACTION,
+        .state = MANAGER_TRANSACTION,
         .on_arrival = transactionOnArrivalForManager,
-        .on_read_ready = readOnReady,
-        .on_write_ready = writeOnReady,
+        .on_read_ready = readOnReadyManager,
+        .on_write_ready = writeOnReadyManager,
     },
     {
-        .state = UPDATE,
-        .on_arrival = NULL,
-        .on_write_ready = writeOnReady,
+        .state = MANAGER_DONE,
     },
     {
-        .state = DONE,
-    },
-    {
-        .state = ERROR
+        .state = MANAGER_ERROR
     }
 };
 
@@ -59,13 +54,13 @@ static const struct state_definition stateHandlers[] = {
 //-----------------------------------Struct to storage relevant info for the manager in selectorKey---------------------
 managerData * newManagerData(const struct sockaddr_storage managerAddress) {
 
-  fprintf(stdout, "ENTRANDO FUNCION: %s(?)\n", __func__);
+  fprintf(stdout, "Entrando en función: %s(?)\n", __func__);
   fprintf(stdout, "LINEA: %d\n", __LINE__);
 
   managerData * managerData = calloc(1, sizeof(struct managerData));
 
-  managerData->manager_data.stateMachine.initial = GREETINGS;
-  managerData->manager_data.stateMachine.max_state = ERROR;
+  managerData->manager_data.stateMachine.initial = MANAGER_GREETINGS;
+  managerData->manager_data.stateMachine.max_state = MANAGER_ERROR;
   managerData->manager_data.stateMachine.states = stateHandlers;
   stm_init(&managerData->manager_data.stateMachine);
 
