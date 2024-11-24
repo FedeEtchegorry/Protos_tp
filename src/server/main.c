@@ -95,7 +95,7 @@ int main(const int argc, char** argv) {
         goto finally;
     }
 
-    fprintf(stdout, "Listening on TCP port %d\n", args.socks_port);
+    fprintf(stdout, "Listening on TCP port %d for Client Server\n", args.socks_port);
 
     setsockopt(clientServer, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
 
@@ -108,7 +108,7 @@ int main(const int argc, char** argv) {
         goto finally;
     }
 
-    fprintf(stdout, "Listening on TCP port %d for manager server\n", args.mng_port);
+    fprintf(stdout, "Listening on TCP port %d for Manager Server\n", args.mng_port);
 
     setsockopt(managerServer, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
 
