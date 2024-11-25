@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-server_metrics *serverMetricsCreate(server_metrics* metrics, size_t *ioReadBufferSize, size_t *ioWriteBufferSize) {
+server_metrics *serverMetricsCreate(const size_t *ioReadBufferSize, const size_t *ioWriteBufferSize) {
 
     server_metrics *serverMetrics = malloc(sizeof(server_metrics));
 

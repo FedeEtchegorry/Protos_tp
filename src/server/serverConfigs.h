@@ -1,6 +1,8 @@
 #ifndef SERVER_CONFIGS_H
 #define SERVER_CONFIGS_H
 
+#include <unistd.h>
+
 // ----------------------------------- MAIN ----------------------------------------------------------------------------
 
 #define DEFAULT_PORT                    1080
@@ -41,5 +43,12 @@
 // ---------------------------------------------------------------------------------------------------------------------
 
 #define DEBUG_PRINT_LOCATION()          fprintf(stdout, "Archivo: %s, Funcion: %s, Linea: %d\n", __FILE__, __func__, __LINE__)
+
+typedef struct {
+
+    size_t ioReadBufferSize;
+    size_t ioWriteBufferSize;
+
+} server_configuration;
 
 #endif // SERVER_CONFIGS_H
