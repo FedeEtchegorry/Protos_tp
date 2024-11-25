@@ -38,6 +38,8 @@
 #define NEW_USER_ARGUMENT_REQUIRED       "Argument required: <username:password>"
 #define ILLEGAL_USERNAME_OR_PASSWORD     "Username and password cannot be empty"
 #define ERROR_ADDING_USER                "Error adding user"
+#define EMPTY_USERNAME_DELETE            "Please provide an username"
+#define ERROR_DELETING_USER              "Error deleting user"
 
 // --------------------------------- MANAGER ---------------------------------------------------------------------------
 

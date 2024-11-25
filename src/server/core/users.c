@@ -78,6 +78,38 @@ bool addUser(const char* username, const char* password, const unsigned int role
     return true;
 }
 
+bool deleteUser(const char *username) {
+    if (users == NULL) {
+        return false;
+    }
+
+    user *current = users;
+    user *previous = NULL;
+
+    while (current != NULL) {
+        if (strcmp(current->username, username) == 0) {
+            if (previous == NULL) {
+                users = current->next;
+            } else {
+                previous->next = current->next;
+            }
+
+            if(current->role == ROLE_ADMIN) {
+                return false;
+            }
+
+            free(current->username);
+            free(current->password);
+            free(current);
+            return true;
+        }
+
+        previous = current;
+        current = current->next;
+    }
+    return false;
+}
+
 
 bool userLogin(const char* username, const char* password) {
     user * maybeLoggedUser = getUserByUsername(username);

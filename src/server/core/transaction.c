@@ -163,8 +163,6 @@ static void handleAddUser(struct selector_key * key) {
     char* username = strtok(data->data.parser.arg, ":");
     char* password = strtok(NULL, ":");
 
-    fprintf(stderr, "Nuevo usuario:%s\nCon contraseña:%s\n", username, password);
-
     if(username == NULL || password == NULL) {
         writeInBuffer(key, true, true, ILLEGAL_USERNAME_OR_PASSWORD, sizeof(ILLEGAL_USERNAME_OR_PASSWORD) - 1);
         return;
@@ -174,6 +172,27 @@ static void handleAddUser(struct selector_key * key) {
         writeInBuffer(key, true, false, NULL, 0);
     } else {
         writeInBuffer(key, true, true, ERROR_ADDING_USER, sizeof(ERROR_ADDING_USER) - 1);
+    }
+}
+
+
+static void handleDeleteUser(struct selector_key * key) {
+    clientData* data = ATTACHMENT(key);
+    if(data->data.parser.arg == NULL) {
+        writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
+        return;
+    }
+    char* username = strtok(data->data.parser.arg, ":");
+
+    if(username == NULL) {
+        writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
+        return;
+    }
+
+    if(deleteUser(username)) {
+        writeInBuffer(key, true, false, NULL, 0);
+    } else {
+        writeInBuffer(key, true, true, ERROR_DELETING_USER, sizeof(ERROR_DELETING_USER) - 1);
     }
 }
 
@@ -312,6 +331,9 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
         break;
     case ADDUSER:
         handleAddUser(key);
+        break;
+    case DELUSER:
+        handleDeleteUser(key);
         break;
     case QUIT_M:
         return MANAGER_QUIT;
