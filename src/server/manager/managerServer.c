@@ -177,16 +177,16 @@ unsigned readOnReadyManager(struct selector_key * key) {
 }
 
 unsigned writeOnReadyManager(struct selector_key * key) {
-  userData * data = ATTACHMENT_USER(key);
+  managerData * data = ATTACHMENT_MANAGER(key);
   bool isFinished = sendFromBuffer(key);
   if (isFinished) {
     unsigned next = UNKNOWN;
-    switch (stm_state(&data->stateMachine)) {
+    switch (stm_state(&data->manager_data.stateMachine)) {
     case MANAGER_GREETINGS:
       next = MANAGER_AUTHORIZATION;
       break;
     case MANAGER_AUTHORIZATION:
-      if (data->isAuth)
+      if (data->manager_data.isAuth)
         next = MANAGER_TRANSACTION;
       else
         next = MANAGER_AUTHORIZATION;
@@ -196,17 +196,17 @@ unsigned writeOnReadyManager(struct selector_key * key) {
       break;
     }
 
-    if (!buffer_can_read(&data->readBuffer)) {
+    if (!buffer_can_read(&data->manager_data.readBuffer)) {
       selector_set_interest_key(key, OP_READ);
       return next;
     }
 
     printf("queda algo en el buffer y salto a %d", next);
-    jump(&data->stateMachine, next, key);
+    jump(&data->manager_data.stateMachine, next, key);
     selector_set_interest_key(key, OP_READ);
     readOnReadyManager(key);
   }
-  return stm_state(&data->stateMachine);
+  return stm_state(&data->manager_data.stateMachine);
 }
 
 

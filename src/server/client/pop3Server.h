@@ -16,6 +16,16 @@ typedef struct clientData {
     unsigned mailCount;
 } clientData;
 
+enum states_from_stm {
+  GREETINGS,
+  AUTHORIZATION,
+  TRANSACTION,
+  UPDATE,
+  DONE,
+  ERROR,
+};
+
+
 //--------------------------------------------- Public Functions -------------------------------------------------------
 
 void initMaildir(const char * directory);
