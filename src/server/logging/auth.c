@@ -87,7 +87,7 @@ unsigned authOnReadReady(struct selector_key* key) {
             handlePassword(key);
             break;
         case QUIT:
-            return DONE;
+            return UPDATE;
         default:
             handleUnknown(key);
     }
@@ -104,7 +104,7 @@ unsigned authOnReadReadyAdmin(struct selector_key* key) {
             handlePasswordAdmin(key);
             break;
     case QUIT_M:
-            return MANAGER_DONE;
+            return MANAGER_QUIT;
     default:
             handleUnknown(key);
     }
