@@ -284,7 +284,7 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
     managerData* data = ATTACHMENT_MANAGER(key);
     switch (data->manager_data.parser.method) {
     case DATA:
-        get_stored_data();
+        //get_stored_data();
         break;
     case QUIT_M:
         return MANAGER_DONE;

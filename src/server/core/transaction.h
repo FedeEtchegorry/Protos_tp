@@ -2,7 +2,6 @@
 #define TRANSACTION_H
 
 #include "selector.h"
-#include "../manager/manager.h"
 
 typedef struct mailInfo {
     char * filename;
