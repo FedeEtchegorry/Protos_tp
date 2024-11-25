@@ -12,9 +12,11 @@
 #include "../core/buffer.h"
 #include "../core/stm.h"
 #include "../logging/auth.h"
+#include "../logging/metrics.h"
 
 char * mailDirectory = NULL;
 extern server_configuration clientServerConfig;
+extern server_metrics *clientMetrics;
 
 //------------------------------------- Array de estados para la stm ---------------------------------------------------
 
@@ -173,12 +175,14 @@ void pop3PassiveAccept(struct selector_key* key) {
         goto fail;
     }
 
+    serverMetricsRecordNewConection(clientMetrics);
+
     return;
 
 fail:
     if (client != -1) {
         close(client);
-        // Registrar con matrics
+        // Registrar con matrics el FAIL
     }
     if (clientData != NULL) {
         freeClientData(&clientData);

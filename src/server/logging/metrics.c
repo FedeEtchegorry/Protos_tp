@@ -35,7 +35,6 @@ server_metrics *serverMetricsCreate(char *dataFilePath, const size_t *ioReadBuff
         file = fopen(dataFilePath, "r+");
         fseek(file, 0, SEEK_END);
         fileSize = ftell(file);
-
         position = fileSize - 1;
 
         while (position >= 0) {
@@ -46,22 +45,16 @@ server_metrics *serverMetricsCreate(char *dataFilePath, const size_t *ioReadBuff
                 fgets(line, sizeof(line), file);
                 break;
             }
-
-            if (position >= EMPTY_METRIC_LINE_SIZE) {
-                position -= EMPTY_METRIC_LINE_SIZE;
-            }
-            else {
-                position--;
-            }
+            position--;
         }
 
         if (line[0] && line[0] != '\n' && line[0] != '\r') {
 
-            serverMetrics->totalCountConnections = strtol(strtok(line, ";"), NULL, 12);
-            serverMetrics->totalTransferredBytes = strtol(strtok(line, ";"), NULL, 12);
-            serverMetrics->totalReceivedBytes = strtol(strtok(line, ";"), NULL, 12);
-            serverMetrics->totalCountUsers = strtol(strtok(line, "\n"), NULL, 12);
-            // fprintf(stdout, "%ld, %ld, %ld, %ld\n", serverMetrics->totalCountConnections, serverMetrics->totalTransferredBytes, serverMetrics->totalReceivedBytes, serverMetrics->totalCountUsers);
+            serverMetrics->totalCountConnections = strtol(strtok(line, ";"), NULL, 10);
+            serverMetrics->totalTransferredBytes = strtol(strtok(NULL, ";"), NULL, 10);
+            serverMetrics->totalReceivedBytes = strtol(strtok(NULL, ";"), NULL, 10);
+            serverMetrics->totalCountUsers = strtol(strtok(NULL, "\n"), NULL, 10);
+            // fprintf(stdout, "%ld,%ld,%ld,%ld\n", serverMetrics->totalCountConnections, serverMetrics->totalTransferredBytes, serverMetrics->totalReceivedBytes, serverMetrics->totalCountUsers);
         }
     }
     else {
@@ -146,7 +139,7 @@ int serverMetricsRecordInFile(server_metrics *metrics) {
         return 0;
     }
 
-    FILE *file = fopen(metrics->dataFilePath, "w+");
+    FILE *file = fopen(metrics->dataFilePath, "a+");
 
     if (file == NULL) {
         fprintf(stderr,"Error al abrir el archivo %s\n", metrics->dataFilePath);
@@ -154,6 +147,7 @@ int serverMetricsRecordInFile(server_metrics *metrics) {
     }
 
     fprintf(file, "%lu;%lu;%lu;%lu\n", metrics->totalCountConnections, metrics->totalTransferredBytes, metrics->totalReceivedBytes, metrics->totalCountUsers);
+    fflush(file);
     fclose(file);
 
     return 1;

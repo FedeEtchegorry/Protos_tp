@@ -243,5 +243,8 @@ finally:
         close(managerServer);
     }
 
+    serverMetricsRecordInFile(clientMetrics);
+    serverMetricsFree(&clientMetrics);
+
     return ret;
 }
