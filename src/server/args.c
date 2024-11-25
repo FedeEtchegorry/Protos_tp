@@ -23,7 +23,7 @@ port(const char* s) {
 }
 
 static void
-user(char* s, struct users* user) {
+parseUser(char* s, struct users* user, Role role) {
     char* p = strchr(s, ':');
     if (p == NULL) {
         fprintf(stderr, "password not found\n");
@@ -33,6 +33,7 @@ user(char* s, struct users* user) {
     p++;
     user->name = s;
     user->pass = p;
+    user->role = role;
 }
 
 static void
@@ -117,7 +118,15 @@ parse_args(const int argc, char** argv, struct pop3Args* args) {
                 fprintf(stderr, "maximun number of command line users reached: %d.\n", MAX_USERS);
                 exit(1);
             }
-            user(optarg, args->users + args->nusers);
+            parseUser(optarg, args->users + args->nusers, ROLE_USER);
+            args->nusers++;
+            break;
+        case 'U':
+            if (args->nusers >= MAX_USERS) {
+                fprintf(stderr, "maximun number of command line users reached: %d.\n", MAX_USERS);
+                exit(1);
+            }
+            parseUser(optarg, args->users + args->nusers, ROLE_ADMIN);
             args->nusers++;
             break;
         case 'v':

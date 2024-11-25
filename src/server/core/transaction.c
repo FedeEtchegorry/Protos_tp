@@ -13,6 +13,7 @@
 #include "../client/pop3Parser.h"
 #include "../manager/managerServer.h"
 #include "../manager/managerParser.h"
+#include "users.h"
 
 //------------------------------------------------------ Private Functions ---------------------------------------------
 
@@ -153,6 +154,29 @@ static void handleUnknown(struct selector_key* key) {
     writeInBuffer(key, true, true, INVALID_COMMAND, sizeof(INVALID_COMMAND) - 1);
 }
 
+static void handleAddUser(struct selector_key * key) {
+    clientData* data = ATTACHMENT(key);
+    if(data->data.parser.arg == NULL) {
+        writeInBuffer(key, true, true, NEW_USER_ARGUMENT_REQUIRED, sizeof(NEW_USER_ARGUMENT_REQUIRED) - 1);
+        return;
+    }
+    char* username = strtok(data->data.parser.arg, ":");
+    char* password = strtok(NULL, ":");
+
+    fprintf(stderr, "Nuevo usuario:%s\nCon contraseña:%s\n", username, password);
+
+    if(username == NULL || password == NULL) {
+        writeInBuffer(key, true, true, ILLEGAL_USERNAME_OR_PASSWORD, sizeof(ILLEGAL_USERNAME_OR_PASSWORD) - 1);
+        return;
+    }
+
+    if(addUser(username, password, ROLE_USER)) {
+        writeInBuffer(key, true, false, NULL, 0);
+    } else {
+        writeInBuffer(key, true, true, ERROR_ADDING_USER, sizeof(ERROR_ADDING_USER) - 1);
+    }
+}
+
 static void handleData(struct selector_key* key){
     printf("MENSAJE");
 }
@@ -285,6 +309,9 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
     switch (data->manager_data.parser.method) {
     case DATA:
         //get_stored_data();
+        break;
+    case ADDUSER:
+        handleAddUser(key);
         break;
     case QUIT_M:
         return MANAGER_QUIT;

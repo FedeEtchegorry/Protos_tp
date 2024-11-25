@@ -47,7 +47,7 @@ int main(const int argc, char** argv) {
     parse_args(argc, argv, &args);
 
     for (unsigned int i = 0; i < args.nusers; i++) {
-        addUser(args.users[i].name, args.users[i].pass, ROLE_USER);
+        addUser(args.users[i].name, args.users[i].pass, args.users[i].role);
     }
 
     if (args.maildir == NULL) {

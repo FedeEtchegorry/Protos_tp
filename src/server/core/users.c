@@ -24,41 +24,43 @@ bool userExists(const char* username) {
   return getUserByUsername(username) != NULL;
 }
 
-void addUser(const char* username, const char* password, const unsigned int role) {
+bool addUser(const char* username, const char* password, const unsigned int role) {
     unsigned int usernameLength = strlen(username);
     unsigned int passwordLength = strlen(password);
 
     if(usersCount >= MAX_USERS) {
         fprintf(stderr, "ERROR: Too many users (%d). Max limit: %d\n", usersCount, MAX_USERS);
-        return;
+        return false;
     }
     if(userExists(username) == true) {
         fprintf(stderr, "WARNING: User '%s' already exists. Please try again with another username.\n", username);
-        return;
+        return false;
     }
 
     if(role != ROLE_USER && role != ROLE_ADMIN) {
         fprintf(stderr, "ERROR: Invalid role. Role must be 0 (USER) or 1 (ADMIN).\n");
-        return;
+        return false;
     }
 
     if(usernameLength > USERS_MAX_USERNAME_LENGTH) {
         fprintf(stderr, "ERROR: Username too long. Max length: %d\n", USERS_MAX_USERNAME_LENGTH);
-        return;
+        return false;
     }
 
     if(passwordLength > USERS_MAX_PASSWORD_LENGTH) {
         fprintf(stderr, "ERROR: Password too long. Max length: %d\n", USERS_MAX_PASSWORD_LENGTH);
-        return;
+        return false;
+
     }
 
     user * newUser = malloc(sizeof(user));
     if(newUser == NULL) {
         fprintf(stderr, "ERROR: Insuficient memory to allocate a new user\n");
-        return;
+        return false;
     }
     if(users == NULL) {
         users = newUser;
+        newUser->next = NULL;
     } else {
         newUser->next = users;
         users = newUser;
@@ -73,7 +75,9 @@ void addUser(const char* username, const char* password, const unsigned int role
     newUser->role = role;
     newUser->isBlocked = false;
     usersCount++;
+    return true;
 }
+
 
 bool userLogin(const char* username, const char* password) {
     user * maybeLoggedUser = getUserByUsername(username);

@@ -14,7 +14,7 @@ typedef struct user {
     struct user * next;
 } user;
 
-void addUser(const char* username, const char* password, unsigned int role);
+bool addUser(const char* username, const char* password, unsigned int role);
 bool userLogin(const char* username, const char* password);
 bool userLoginAdmin(const char* username, const char* password);
 bool userExists(const char* username);

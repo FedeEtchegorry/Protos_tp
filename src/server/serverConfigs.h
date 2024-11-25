@@ -35,6 +35,9 @@
 #define NO_USERNAME                      "No username given"
 #define INVALID_METHOD                   "Invalid method"
 #define MESSAGE_DELETED                  "Message deleted"
+#define NEW_USER_ARGUMENT_REQUIRED       "Argument required: <username:password>"
+#define ILLEGAL_USERNAME_OR_PASSWORD     "Username and password cannot be empty"
+#define ERROR_ADDING_USER                "Error adding user"
 
 // --------------------------------- MANAGER ---------------------------------------------------------------------------
 

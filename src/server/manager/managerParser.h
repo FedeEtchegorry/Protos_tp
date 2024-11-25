@@ -6,6 +6,7 @@
 enum manager_methods {
   USER_M,
   PASS_M,
+  ADDUSER,
   DATA,
   QUIT_M,
   UNKNOWN_M
