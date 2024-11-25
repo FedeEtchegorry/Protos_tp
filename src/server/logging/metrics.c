@@ -52,8 +52,7 @@ server_metrics *serverMetricsCreate(char *dataFilePath, const size_t *ioReadBuff
 
             serverMetrics->totalCountConnections = strtol(strtok(line, ";"), NULL, 10);
             serverMetrics->totalTransferredBytes = strtol(strtok(NULL, ";"), NULL, 10);
-            serverMetrics->totalReceivedBytes = strtol(strtok(NULL, ";"), NULL, 10);
-            serverMetrics->totalCountUsers = strtol(strtok(NULL, "\n"), NULL, 10);
+            serverMetrics->totalReceivedBytes = strtol(strtok(NULL, "\n"), NULL, 10);
         }
     }
     else {
@@ -83,6 +82,15 @@ void serverMetricsFree(server_metrics** metrics) {
       return;
     }
     free(*metrics);
+}
+
+
+void serverMetricsRecordNewUser(server_metrics* metrics) {
+
+    if (metrics == NULL) {
+      return;
+    }
+    metrics->totalCountUsers++;
 }
 
 void serverMetricsRecordNewConection(server_metrics* metrics) {
@@ -122,15 +130,6 @@ void serverMetricsRecordBytesReceived(server_metrics* metrics, size_t bytes) {
     metrics->totalReceivedBytes += bytes;
 }
 
-void serverMetricsReset(server_metrics* metrics) {
-
-    if (metrics == NULL) {
-        return;
-    }
-    // Salvar puntero de lista de usuarios
-    memset(metrics, 0, sizeof(server_metrics));
-    serverMetricsRecordNewConection(metrics);
-}
 
 int serverMetricsRecordInFile(server_metrics *metrics) {
 
@@ -145,7 +144,7 @@ int serverMetricsRecordInFile(server_metrics *metrics) {
         return 0;
     }
 
-    fprintf(file, "%lu;%lu;%lu;%lu\n", metrics->totalCountConnections, metrics->totalTransferredBytes, metrics->totalReceivedBytes, metrics->totalCountUsers);
+    fprintf(file, "%lu;%lu;%lu\n", metrics->totalCountConnections, metrics->totalTransferredBytes, metrics->totalReceivedBytes);
     fflush(file);
     fclose(file);
 
