@@ -52,13 +52,13 @@ static long int checkEmailNumber(struct selector_key* key, long int * result) {
     return 0;
 }
 
-static unsigned long int generateUIDL(const char *filename) {
-    time_t now = time(NULL);
-    unsigned long checksum = 0;
+static unsigned long long int generateUIDL(const char *filename) {
+
+    unsigned long long checksum = 0;
     for (const char *ptr = filename; *ptr; ptr++) {
         checksum += *ptr;
     }
-    return checksum*now;
+    return (long long unsigned int)(checksum*checksum*checksum*strlen(filename));
 }
 
 static void handleUIDL(struct selector_key* key) {
@@ -71,8 +71,8 @@ static void handleUIDL(struct selector_key* key) {
         writeInBuffer(key, true, false, "", strlen(""));
         for (long int i = 0; i < data->mailCount; i++) {
           if (!(data->mails[i]->deleted)) {
-            long unsigned int uidl = data->mails[i]->checksum;
-            sprintf(message, "%li %lu", i+1, uidl);
+            long long unsigned int uidl = data->mails[i]->checksum;
+            sprintf(message, "%li %llu", i+1, uidl);
             writeInBuffer(key, false, false, message, strlen(message));
           }
         }
