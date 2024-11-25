@@ -5,7 +5,6 @@
 #include "../core/users.h"
 
 typedef struct {
-
   size_t totalCountConnections;
   size_t currentConectionsCount;
   size_t totalTransferredBytes;
@@ -14,7 +13,6 @@ typedef struct {
   const size_t *ioReadBufferSize;
   const size_t *ioWriteBufferSize;
   char *dataFilePath;
-// Agregar lista de usuarios
 } server_metrics;
 
 server_metrics *serverMetricsCreate(char *dataFilePath, const size_t *ioReadBufferSize, const size_t *ioWriteBufferSize);

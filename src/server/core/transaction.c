@@ -14,6 +14,9 @@
 #include "../manager/managerServer.h"
 #include "../manager/managerParser.h"
 #include "users.h"
+#include "../logging/metrics.h"
+
+extern server_metrics *clientMetrics;
 
 //------------------------------------------------------ Private Functions ---------------------------------------------
 
@@ -220,13 +223,45 @@ static void handleSudo(struct selector_key * key) {
 }
 
 
-static void handlerRst(struct selector_key * key)
-{
-    // Reiniciar las estadisticas de las metricas que correspondan
+static void handlerRst(struct selector_key * key) {
+    clientMetrics->totalCountConnections = 0;
+    clientMetrics->totalTransferredBytes = 0;
+    clientMetrics->totalReceivedBytes = 0;
+    writeInBuffer(key, true, false, NULL, 0);
 }
 
 static void handleData(struct selector_key* key){
-    printf("MENSAJE");
+    clientData* data = ATTACHMENT(key);
+    char buffer[1024];
+
+    int bytesWritten = snprintf(buffer, sizeof(buffer),
+        "\nServer Metrics:\n"
+        "-------------------------\n"
+        "Total Count Connections: %zu\n"
+        "Current Connections Count: %zu\n"
+        "Total Transferred Bytes: %zu\n"
+        "Total Received Bytes: %zu\n"
+        "Total Count Users: %zu\n"
+        "IO Read Buffer Size: %zu bytes\n"
+        "IO Write Buffer Size: %zu bytes\n"
+        "Data File Path: %s",
+        clientMetrics->totalCountConnections,
+        clientMetrics->currentConectionsCount,
+        clientMetrics->totalTransferredBytes,
+        clientMetrics->totalReceivedBytes,
+        clientMetrics->totalCountUsers,
+        clientMetrics->ioReadBufferSize ? *clientMetrics->ioReadBufferSize : 0,
+        clientMetrics->ioWriteBufferSize ? *clientMetrics->ioWriteBufferSize : 0,
+        clientMetrics->dataFilePath ? clientMetrics->dataFilePath : "(not set)"
+    );
+
+    if (bytesWritten < 0) {
+        fprintf(stderr, "Error formatting server metrics\n");
+    } else if ((size_t)bytesWritten >= sizeof(buffer)) {
+        fprintf(stderr, "Buffer overflow detected when formatting server metrics\n");
+    } else {
+        writeInBuffer(key, true, false, buffer, bytesWritten);
+    }
 }
 
 //--------------------------------------- Aux functions ----------------------------------------------------------------
@@ -355,7 +390,7 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
     managerData* data = ATTACHMENT_MANAGER(key);
     switch (data->manager_data.parser.method) {
     case DATA:
-        //get_stored_data();
+        handleData(key);
         break;
     case ADDUSER:
         handleAddUser(key);
