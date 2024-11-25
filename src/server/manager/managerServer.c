@@ -6,9 +6,11 @@
 #include "../core/buffer.h"
 #include "../logging/auth.h"
 #include "../client/pop3Parser.h"
+#include "stdio.h"
 
 #include "manager.h"
 #include "managerParser.h"
+#include "../update.h"
 
 #define BUFFER_SIZE 8192
 
@@ -34,6 +36,8 @@ static const struct state_definition stateHandlers[] = {
     },
     {
         .state = MANAGER_DONE,
+        .on_arrival = doneOnArrival,
+        .on_read_ready = readOnReadyManager,
     },
     {
         .state = MANAGER_ERROR
@@ -68,6 +72,14 @@ managerData * newManagerData(const struct sockaddr_storage managerAddress) {
 
 //------------------------------ Passive Socket ------------------------------------------------------------------------
 
+static fd_handler handler = {
+    .handle_read = manager_read,
+    .handle_write = manager_write,
+    .handle_block = manager_block,
+    .handle_close = server_close,
+};
+
+
 void manager_passive_accept(struct selector_key* key) {
 
   struct sockaddr_storage manager_addr;
@@ -85,7 +97,7 @@ void manager_passive_accept(struct selector_key* key) {
 
   managerData * managerData = newManagerData(manager_addr);
 
-  if (SELECTOR_SUCCESS != selector_register(key->s, manager, getHandler(), OP_WRITE, managerData)) {
+  if (SELECTOR_SUCCESS != selector_register(key->s, manager, &handler, OP_WRITE, managerData)) {
     goto fail;
   }
   return;
@@ -95,3 +107,63 @@ fail:
     close(manager);
   }
 }
+
+
+
+//------------------------------------- Generic handler for MANAGER -------------------------
+
+unsigned readOnReadyManager(struct selector_key * key) {
+  managerData * data = ATTACHMENT_MANAGER(key);
+  bool isFinished = readAndParse(key);
+  if (isFinished) {
+    printf("Entrando a read finished de MANAGER\n");
+    unsigned next = UNKNOWN;
+    switch (stm_state(&data->manager_data.stateMachine)) {
+    case MANAGER_AUTHORIZATION:
+      next = authOnReadReadyAdmin(key);
+      break;
+    case MANAGER_TRANSACTION:
+      next = transactionManagerOnReadReady(key);
+      break;
+    }
+    resetParser(&data->manager_data.parser);
+    selector_set_interest_key(key, OP_WRITE);
+    return next;
+  }
+  return stm_state(&data->manager_data.stateMachine);
+}
+
+unsigned writeOnReadyManager(struct selector_key * key) {
+  userData * data = ATTACHMENT_USER(key);
+  bool isFinished = sendFromBuffer(key);
+  if (isFinished) {
+    unsigned next = UNKNOWN;
+    switch (stm_state(&data->stateMachine)) {
+    case MANAGER_GREETINGS:
+      next = MANAGER_AUTHORIZATION;
+      break;
+    case MANAGER_AUTHORIZATION:
+      if (data->isAuth)
+        next = MANAGER_TRANSACTION;
+      else
+        next = MANAGER_AUTHORIZATION;
+      break;
+    case MANAGER_TRANSACTION:
+      next = MANAGER_TRANSACTION;
+      break;
+    }
+
+    if (!buffer_can_read(&data->readBuffer)) {
+      selector_set_interest_key(key, OP_READ);
+      return next;
+    }
+
+    printf("queda algo en el buffer y salto a %d", next);
+    jump(&data->stateMachine, next, key);
+    selector_set_interest_key(key, OP_READ);
+    readOnReadyManager(key);
+  }
+  return stm_state(&data->stateMachine);
+}
+
+

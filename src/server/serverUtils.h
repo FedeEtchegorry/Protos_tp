@@ -42,17 +42,23 @@ typedef struct userData {
 
 } userData;
 
-unsigned readOnReady(struct selector_key * key);
-unsigned writeOnReady(struct selector_key * key);
-
-unsigned readOnReadyManager(struct selector_key * key);
-unsigned writeOnReadyManager(struct selector_key * key);
 
 void writeInBuffer(struct selector_key* key, bool hasStatusCode, bool isError, char* msg, long len);
 bool sendFromBuffer(struct selector_key* key);
 bool readAndParse(struct selector_key* key);
 
-fd_handler* getHandler();
+void server_done(struct selector_key* key);
+void pop3_read(struct selector_key*key);
+void manager_read(struct selector_key* key);
+void pop3_write(struct selector_key* key);
+void manager_write(struct selector_key* key);
+void pop3_block(struct selector_key* key);
+void manager_block(struct selector_key* key);
+void server_close(struct selector_key* key);
+
+fd_handler* getHandlerForClient();
+fd_handler* getHandlerForManager();
+
 
 fd_handler* getHandlerForClient();
 fd_handler* getHandlerForManager();

@@ -42,5 +42,7 @@ typedef struct managerData {
 //--------------------------------------------- Public Functions -------------------------------------------------------
 
 void manager_passive_accept(struct selector_key* key);
+unsigned writeOnReadyManager(struct selector_key * key);
+unsigned readOnReadyManager(struct selector_key * key);
 
 #endif // PROTOS_TP_MANAGERSERVER_H
