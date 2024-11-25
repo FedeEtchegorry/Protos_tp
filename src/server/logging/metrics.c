@@ -4,6 +4,8 @@
 #include <string.h>
 #include "../serverConfigs.h"
 
+#define EMPTY_METRIC_LINE_SIZE    7
+
 server_metrics *serverMetricsCreate(char *dataFilePath, const size_t *ioReadBufferSize, const size_t *ioWriteBufferSize) {
 
     server_metrics *serverMetrics = malloc(sizeof(server_metrics));
@@ -16,39 +18,68 @@ server_metrics *serverMetricsCreate(char *dataFilePath, const size_t *ioReadBuff
     serverMetrics->ioReadBufferSize = ioReadBufferSize;
     serverMetrics->ioWriteBufferSize = ioWriteBufferSize;
 
-    if (dataFilePath != NULL) {
+    if (dataFilePath == NULL) {
+        return serverMetrics;
+    }
 
-        FILE *file = NULL;
+    FILE *file = NULL;
 
-        if (access(dataFilePath, F_OK) != 0) {
-            file = fopen(serverMetrics->dataFilePath, "w");
-        }
-        else {
-            file = fopen(serverMetrics->dataFilePath, "w+");
-        }
+    int fileAlreadyExists = access(dataFilePath, F_OK) == 0;
 
-        if (file != NULL) {
+    if (fileAlreadyExists) {
 
-            char line[64] = {0};
+        char line[64] = {0};
+        size_t fileSize = 0;
+        long position = 0;
 
-            while (fgets(line, sizeof(line), file)) {
+        file = fopen(dataFilePath, "r+");
+        fseek(file, 0, SEEK_END);
+        fileSize = ftell(file);
 
-                if (line[0] != '\n' && line[0] != '\r') {
+        position = fileSize - 1;
 
-                    serverMetrics->totalCountConnections = strtol(strtok(line, ";"), NULL, 12);
-                    serverMetrics->totalTransferredBytes = strtol(strtok(line, ";"), NULL, 12);
-                    serverMetrics->totalReceivedBytes = strtol(strtok(line, ";"), NULL, 12);
-                    serverMetrics->totalCountUsers = strtol(strtok(line, "\n"), NULL, 12);
-                }
+        while (position >= 0) {
+
+            fseek(file, position, SEEK_SET);
+
+            if (position == 0 || (fgetc(file) == '\n' && position != fileSize - 1)) {
+                fgets(line, sizeof(line), file);
+                break;
             }
 
-            fclose(file);
-            serverMetrics->dataFilePath = dataFilePath;
-        }
-        else {
-            fprintf(stderr,"Error al abrir el archivo %s\n", serverMetrics->dataFilePath);
+            if (position >= EMPTY_METRIC_LINE_SIZE) {
+                position -= EMPTY_METRIC_LINE_SIZE;
+            }
+            else {
+                position--;
+            }
         }
 
+        if (line[0] && line[0] != '\n' && line[0] != '\r') {
+
+            serverMetrics->totalCountConnections = strtol(strtok(line, ";"), NULL, 12);
+            serverMetrics->totalTransferredBytes = strtol(strtok(line, ";"), NULL, 12);
+            serverMetrics->totalReceivedBytes = strtol(strtok(line, ";"), NULL, 12);
+            serverMetrics->totalCountUsers = strtol(strtok(line, "\n"), NULL, 12);
+            // fprintf(stdout, "%ld, %ld, %ld, %ld\n", serverMetrics->totalCountConnections, serverMetrics->totalTransferredBytes, serverMetrics->totalReceivedBytes, serverMetrics->totalCountUsers);
+        }
+    }
+    else {
+        fprintf(stderr,"Creando archivo %s\n", dataFilePath);
+        file = fopen(dataFilePath, "w");
+        serverMetricsRecordInFile(serverMetrics);
+    }
+
+    if (file == NULL) {
+        fprintf(stderr,"Error al abrir el archivo %s\n", dataFilePath);
+    }
+    else {
+        fclose(file);
+        serverMetrics->dataFilePath = dataFilePath;
+
+        if (!fileAlreadyExists) {
+            serverMetricsRecordInFile(serverMetrics);
+        }
     }
 
     return serverMetrics;
@@ -111,7 +142,7 @@ void serverMetricsReset(server_metrics* metrics) {
 
 int serverMetricsRecordInFile(server_metrics *metrics) {
 
-    if (metrics != NULL || metrics->dataFilePath == NULL) {
+    if (metrics == NULL || metrics->dataFilePath == NULL) {
         return 0;
     }
 
