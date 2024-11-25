@@ -70,8 +70,8 @@ int main(const int argc, char** argv) {
     managerServerConfig.ioReadBufferSize = DEFAULT_IO_BUFFER_SIZE;
     managerServerConfig.ioWriteBufferSize = DEFAULT_IO_BUFFER_SIZE;
 
-    clientMetrics = serverMetricsCreate(&clientServerConfig.ioReadBufferSize, &clientServerConfig.ioWriteBufferSize);
-    managerMetrics = serverMetricsCreate(&managerServerConfig.ioReadBufferSize, &managerServerConfig.ioWriteBufferSize);
+    clientMetrics = serverMetricsCreate(HISTORIC_DATA_FILE, &clientServerConfig.ioReadBufferSize, &clientServerConfig.ioWriteBufferSize);
+    managerMetrics = serverMetricsCreate(NULL, &managerServerConfig.ioReadBufferSize, &managerServerConfig.ioWriteBufferSize);
 
     initMaildir(args.maildir);
 
