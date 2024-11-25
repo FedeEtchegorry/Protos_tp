@@ -8,6 +8,11 @@ enum manager_methods {
   PASS_M,
   ADDUSER,
   DELUSER,
+  BLOCK,
+  UNBLOCK,
+  SUDO,
+  RST,
+  SHOW,
   DATA,
   QUIT_M,
   UNKNOWN_M

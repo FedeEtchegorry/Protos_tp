@@ -111,6 +111,29 @@ bool deleteUser(const char *username) {
 }
 
 
+bool blockUser(const char *username, bool block) {
+   user * maybeUser = getUserByUsername(username);
+
+    if(maybeUser != NULL)
+    {
+        maybeUser->isBlocked = block;
+        return true;
+    }
+    return false;
+}
+
+bool makeUserAdmin(const char *username) {
+    user * maybeUser = getUserByUsername(username);
+
+    if(maybeUser != NULL)
+    {
+        maybeUser->role = ROLE_ADMIN;
+        return true;
+    }
+    return false;
+}
+
+
 bool userLogin(const char* username, const char* password) {
     user * maybeLoggedUser = getUserByUsername(username);
     if(maybeLoggedUser == NULL || strcmp(maybeLoggedUser->password, password) != 0)

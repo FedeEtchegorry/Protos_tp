@@ -16,6 +16,8 @@ typedef struct user {
 
 bool addUser(const char* username, const char* password, unsigned int role);
 bool deleteUser(const char* username);
+bool blockUser(const char *username, bool block);
+bool makeUserAdmin(const char *username);
 bool userLogin(const char* username, const char* password);
 bool userLoginAdmin(const char* username, const char* password);
 bool userExists(const char* username);

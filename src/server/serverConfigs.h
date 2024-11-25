@@ -40,6 +40,8 @@
 #define ERROR_ADDING_USER                "Error adding user"
 #define EMPTY_USERNAME_DELETE            "Please provide an username"
 #define ERROR_DELETING_USER              "Error deleting user"
+#define ERROR_BLOCKING_USER              "Error blocking/unblocking user"
+#define ERROR_MAKING_USER_ADMIN          "Error making user admin"
 
 // --------------------------------- MANAGER ---------------------------------------------------------------------------
 

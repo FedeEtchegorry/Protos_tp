@@ -175,14 +175,13 @@ static void handleAddUser(struct selector_key * key) {
     }
 }
 
-
 static void handleDeleteUser(struct selector_key * key) {
     clientData* data = ATTACHMENT(key);
     if(data->data.parser.arg == NULL) {
         writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
         return;
     }
-    char* username = strtok(data->data.parser.arg, ":");
+    char* username = data->data.parser.arg;
 
     if(username == NULL) {
         writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
@@ -194,6 +193,59 @@ static void handleDeleteUser(struct selector_key * key) {
     } else {
         writeInBuffer(key, true, true, ERROR_DELETING_USER, sizeof(ERROR_DELETING_USER) - 1);
     }
+}
+
+static void handleBlock(struct selector_key * key, bool block) {
+    clientData* data = ATTACHMENT(key);
+    if(data->data.parser.arg == NULL) {
+        writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
+        return;
+    }
+    char* username = data->data.parser.arg;
+
+    if(username == NULL) {
+        writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
+        return;
+    }
+
+    if(blockUser(username, block)) {
+        writeInBuffer(key, true, false, NULL, 0);
+    }
+    else {
+        writeInBuffer(key, true, true, ERROR_BLOCKING_USER, sizeof(ERROR_BLOCKING_USER) - 1);
+    }
+}
+
+static void handleSudo(struct selector_key * key) {
+    clientData* data = ATTACHMENT(key);
+    if(data->data.parser.arg == NULL) {
+        writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
+        return;
+    }
+    char* username = data->data.parser.arg;
+
+    if(username == NULL) {
+        writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
+        return;
+    }
+
+    if(makeUserAdmin(username))
+    {
+        writeInBuffer(key, true, false, NULL, 0);
+    }
+    else{
+        writeInBuffer(key, true, true, ERROR_MAKING_USER_ADMIN, sizeof(ERROR_MAKING_USER_ADMIN) - 1);
+    }
+}
+
+static void handlerShow(struct selector_key * key)
+{
+
+}
+
+static void handlerRst(struct selector_key * key)
+{
+    // Reiniciar las estadisticas de las metricas que correspondan
 }
 
 static void handleData(struct selector_key* key){
@@ -334,6 +386,21 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
         break;
     case DELUSER:
         handleDeleteUser(key);
+        break;
+    case BLOCK:
+        handleBlock(key, true);
+        break;
+    case UNBLOCK:
+        handleBlock(key, false);
+        break;
+    case SUDO:
+        handleSudo(key);
+        break;
+    case RST:
+        handlerRst(key);
+        break;
+    case SHOW:
+        handlerShow(key);
         break;
     case QUIT_M:
         return MANAGER_QUIT;
