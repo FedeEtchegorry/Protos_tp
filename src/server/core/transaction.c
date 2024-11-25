@@ -43,6 +43,11 @@ static long int checkEmailNumber(struct selector_key* key, long int * result) {
 static void handleList(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
     char message[MAX_AUX_BUFFER_SIZE];
+    if (data->data.parser.arg2!=NULL){
+        snprintf(message, MAX_AUX_BUFFER_SIZE, "%s",NOISE_ARGUMETS);
+        writeInBuffer(key, true, true, NOISE_ARGUMETS, strlen(message));
+        return;
+    }
     if (data->data.parser.arg == NULL) {
         unsigned notDeleted = 0;
         for (unsigned i = 0; i < data->mailCount; i++) {
@@ -76,10 +81,15 @@ static void handleList(struct selector_key* key) {
 
 static void handleRetr(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-
+    char auxBuffer[MAX_AUX_BUFFER_SIZE];
+    if (data->data.parser.arg2!=NULL){
+        snprintf(auxBuffer, MAX_AUX_BUFFER_SIZE, "%s",NOISE_ARGUMETS);
+        writeInBuffer(key, true, true, NOISE_ARGUMETS, strlen(auxBuffer));
+        return;
+    }
     long int msgNumber;
     if (checkEmailNumber(key, &msgNumber) == 0) {
-        char auxBuffer[MAX_AUX_BUFFER_SIZE];
+
         snprintf(auxBuffer, MAX_AUX_BUFFER_SIZE, "%u octets", data->mails[msgNumber - 1]->size);
         writeInBuffer(key, true, false, auxBuffer, strlen(auxBuffer));
 
@@ -287,7 +297,7 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
         //get_stored_data();
         break;
     case QUIT_M:
-        return MANAGER_QUIT;
+        return MANAGER_EXIT;
     default:
         handleUnknown(key);
     }

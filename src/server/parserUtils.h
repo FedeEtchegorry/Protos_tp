@@ -16,12 +16,14 @@ typedef struct {
 
 typedef struct parser {
   char *arg;
-  bool isCRLF;
-  int method;
-  int state;
+  char *arg2;
+  int argc;
   buffer buffer;
   const methodsMap *all_methods;
   int unknown_method;
+  int method;
+  int state;
+  bool isCRLF;
 } parser;
 
 void processBuffer(parser *parser);
