@@ -99,6 +99,16 @@ void serverMetricsRecordBytesReceived(server_metrics* metrics, size_t bytes) {
     metrics->totalReceivedBytes += bytes;
 }
 
+void serverMetricsReset(server_metrics* metrics) {
+
+    if (metrics == NULL) {
+        return;
+    }
+    // Salvar puntero de lista de usuarios
+    memset(metrics, 0, sizeof(server_metrics));
+    serverMetricsRecordNewConection(metrics);
+}
+
 int serverMetricsRecordInFile(server_metrics *metrics) {
 
     if (metrics != NULL || metrics->dataFilePath == NULL) {

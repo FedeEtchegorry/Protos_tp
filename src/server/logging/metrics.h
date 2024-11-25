@@ -2,6 +2,7 @@
 #define METRICS_H
 
 #include <unistd.h>
+#include "../core/users.h"
 
 typedef struct {
 
@@ -13,8 +14,7 @@ typedef struct {
   const size_t *ioReadBufferSize;
   const size_t *ioWriteBufferSize;
   char *dataFilePath;
-  char **userList; // Tiempo de conexion de usuario
-
+// Agregar lista de usuarios
 } server_metrics;
 
 server_metrics *serverMetricsCreate(char *dataFilePath, const size_t *ioReadBufferSize, const size_t *ioWriteBufferSize);
@@ -28,6 +28,8 @@ void serverMetricsRecordDropConection(server_metrics* metrics);
 void serverMetricsRecordBytesTransferred(server_metrics* metrics, size_t bytes);
 
 void serverMetricsRecordBytesReceived(server_metrics* metrics, size_t bytes);
+
+void serverMetricsReset(server_metrics* metrics);
 
 int serverMetricsRecordInFile(server_metrics *metrics);
 
