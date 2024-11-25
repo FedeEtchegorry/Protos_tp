@@ -12,6 +12,7 @@ enum methods {
   DELE,
   RSET,
   NOOP,
+  CAPA,
   QUIT,
   UNKNOWN
 };

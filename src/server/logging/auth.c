@@ -9,7 +9,16 @@
 #include "../manager/managerParser.h"
 #include "../manager/managerServer.h"
 
+#define MAX_AUX_BUFFER_SIZE    255
 //--------------------------------- Private Functions -------------------------------
+static void handleCapa(struct selector_key* key){
+  const methodsMap * methods = getPop3Methods();
+  char method[BUFSIZ];
+  for (int i = 0; methods[i].command!=NULL; i++) {
+    snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", methods[i].command);
+    writeInBuffer(key, true, false, method, strlen(method));
+  }
+}
 
 static void handleUsername(struct selector_key* key) {
     userData * data = ATTACHMENT_USER(key);
@@ -88,6 +97,9 @@ unsigned authOnReadReady(struct selector_key* key) {
             break;
         case QUIT:
             return UPDATE;
+        case CAPA:
+            handleCapa(key);
+            break;
         default:
             handleUnknown(key);
     }
@@ -103,8 +115,12 @@ unsigned authOnReadReadyAdmin(struct selector_key* key) {
     case PASS_M:
             handlePasswordAdmin(key);
             break;
+    case CAPA_M:
+            handleCapa(key);
+            break;
     case QUIT_M:
             return EXIT;
+
     default:
             handleUnknown(key);
     }

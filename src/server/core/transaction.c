@@ -52,6 +52,15 @@ static long int checkEmailNumber(struct selector_key* key, long int * result) {
     return 0;
 }
 
+static void handleCapa(struct selector_key* key){
+    const methodsMap * methods = getPop3Methods();
+    char method[MAX_AUX_BUFFER_SIZE];
+    for (int i = 0; methods[i].command!=NULL; i++) {
+        snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", methods[i].command);
+        writeInBuffer(key, true, false, method, strlen(method));
+    }
+}
+
 static void handleList(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
     if (checkNoiseArguments(key))
@@ -263,6 +272,9 @@ void transactionOnArrival(const unsigned int state, struct selector_key* key) {
 unsigned transactionOnReadReady(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
     switch (data->data.parser.method) {
+    case CAPA:
+        handleCapa(key);
+        break;
     case LIST:
         handleList(key);
         break;
@@ -304,6 +316,9 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
         break;
     case QUIT_M:
         return MANAGER_EXIT;
+    case CAPA_M:
+        handleCapa(key);
+        break;
     default:
         handleUnknown(key);
     }
