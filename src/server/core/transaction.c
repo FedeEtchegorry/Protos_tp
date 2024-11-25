@@ -192,26 +192,6 @@ static void handleAddUser(struct selector_key * key) {
     }
 }
 
-static void handleDeleteUser(struct selector_key * key) {
-    clientData* data = ATTACHMENT(key);
-    if(data->data.parser.arg == NULL) {
-        writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
-        return;
-    }
-    char* username = data->data.parser.arg;
-
-    if(username == NULL) {
-        writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
-        return;
-    }
-
-    if(deleteUser(username)) {
-        writeInBuffer(key, true, false, NULL, 0);
-    } else {
-        writeInBuffer(key, true, true, ERROR_DELETING_USER, sizeof(ERROR_DELETING_USER) - 1);
-    }
-}
-
 static void handleBlock(struct selector_key * key, bool block) {
     setServerBlocked(block);
     writeInBuffer(key, true, false, NULL, 0);
@@ -239,10 +219,6 @@ static void handleSudo(struct selector_key * key) {
     }
 }
 
-static void handlerShow(struct selector_key * key)
-{
-
-}
 
 static void handlerRst(struct selector_key * key)
 {
@@ -363,7 +339,6 @@ unsigned transactionOnReadReady(struct selector_key* key) {
         break;
     case QUIT:
         return UPDATE;
-        break;
     default:
         handleUnknown(key);
     }
@@ -385,9 +360,6 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
     case ADDUSER:
         handleAddUser(key);
         break;
-    case DELUSER:
-        handleDeleteUser(key);
-        break;
     case BLOCK:
         handleBlock(key, true);
         break;
@@ -399,9 +371,6 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
         break;
     case RST:
         handlerRst(key);
-        break;
-    case SHOW:
-        handlerShow(key);
         break;
     case QUIT_M:
         return MANAGER_EXIT;
