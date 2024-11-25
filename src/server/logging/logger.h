@@ -3,17 +3,25 @@
 
 #include "../serverConfigs.h"
 #include "../core/selector.h"
+#include "../core/buffer.h"
 
 typedef struct server_logger {
 
+    fd_selector *selector;
+    buffer buffer;
+    size_t bufferSize;
+    size_t currentLogs;
     char *loggerFilePath;
+    int loggerFd;
 
 } server_logger;
 
-int serverLoggerInit();
+server_logger *serverLoggerCreate(fd_selector *selector, char *loggerFilePath);
 
-int serverLoggerTerminate();
+void serverLoggerTerminate(server_logger **serverLogger);
 
-void serverLoggerRegister();
+void serverLoggerRegister(server_logger *serverLogger);
+
+size_t serverLoggerRetrive(server_logger *serverLogger, char *string, size_t lines);
 
 #endif // LOGGER_H
