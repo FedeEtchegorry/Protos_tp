@@ -58,4 +58,10 @@ typedef struct {
 
 } server_configuration;
 
+bool serverBlocked = false;
+
+inline void setServerBlocked(bool block) {
+    serverBlocked = block;
+}
+
 #endif // SERVER_CONFIGS_H

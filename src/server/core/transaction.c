@@ -196,24 +196,8 @@ static void handleDeleteUser(struct selector_key * key) {
 }
 
 static void handleBlock(struct selector_key * key, bool block) {
-    clientData* data = ATTACHMENT(key);
-    if(data->data.parser.arg == NULL) {
-        writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
-        return;
-    }
-    char* username = data->data.parser.arg;
-
-    if(username == NULL) {
-        writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
-        return;
-    }
-
-    if(blockUser(username, block)) {
-        writeInBuffer(key, true, false, NULL, 0);
-    }
-    else {
-        writeInBuffer(key, true, true, ERROR_BLOCKING_USER, sizeof(ERROR_BLOCKING_USER) - 1);
-    }
+    setServerBlocked(block);
+    writeInBuffer(key, true, false, NULL, 0);
 }
 
 static void handleSudo(struct selector_key * key) {

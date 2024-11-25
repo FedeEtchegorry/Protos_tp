@@ -10,7 +10,6 @@ typedef struct user {
     char *username;
     char *password;
     Role role;
-    bool isBlocked;
     struct user * next;
 } user;
 

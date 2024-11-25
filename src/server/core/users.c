@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../serverConfigs.h"
+
 //static user users[MAX_USERS];
 
 static user * users = NULL;
@@ -73,7 +75,6 @@ bool addUser(const char* username, const char* password, const unsigned int role
     strcpy(newUser->password, password);
 
     newUser->role = role;
-    newUser->isBlocked = false;
     usersCount++;
     return true;
 }
@@ -111,17 +112,6 @@ bool deleteUser(const char *username) {
 }
 
 
-bool blockUser(const char *username, bool block) {
-   user * maybeUser = getUserByUsername(username);
-
-    if(maybeUser != NULL)
-    {
-        maybeUser->isBlocked = block;
-        return true;
-    }
-    return false;
-}
-
 bool makeUserAdmin(const char *username) {
     user * maybeUser = getUserByUsername(username);
 
@@ -136,7 +126,7 @@ bool makeUserAdmin(const char *username) {
 
 bool userLogin(const char* username, const char* password) {
     user * maybeLoggedUser = getUserByUsername(username);
-    if(maybeLoggedUser == NULL || strcmp(maybeLoggedUser->password, password) != 0 || maybeLoggedUser->isBlocked)
+    if(maybeLoggedUser == NULL || strcmp(maybeLoggedUser->password, password) != 0 || serverBlocked)
         return false;
     return true;
 }
