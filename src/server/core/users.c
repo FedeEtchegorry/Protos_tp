@@ -136,7 +136,7 @@ bool makeUserAdmin(const char *username) {
 
 bool userLogin(const char* username, const char* password) {
     user * maybeLoggedUser = getUserByUsername(username);
-    if(maybeLoggedUser == NULL || strcmp(maybeLoggedUser->password, password) != 0)
+    if(maybeLoggedUser == NULL || strcmp(maybeLoggedUser->password, password) != 0 || maybeLoggedUser->isBlocked)
         return false;
     return true;
 }
