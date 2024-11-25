@@ -32,7 +32,7 @@ void updateOnArrival(const unsigned int state, struct selector_key *key) {
   selector_set_interest_key(key, OP_WRITE);
 }
 
-void quitOnArrival(const unsigned int state, struct selector_key *key){
+void exitOnArrival(const unsigned int state, struct selector_key *key){
   writeInBuffer(key, true, false, LOG_OUT, sizeof(LOG_OUT)-1);
   selector_set_interest_key(key, OP_WRITE);
 }

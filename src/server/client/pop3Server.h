@@ -21,6 +21,7 @@ enum states_from_stm {
   AUTHORIZATION,
   TRANSACTION,
   UPDATE,
+  EXIT,
   DONE,
   ERROR,
 };
