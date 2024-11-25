@@ -54,7 +54,6 @@ server_metrics *serverMetricsCreate(char *dataFilePath, const size_t *ioReadBuff
             serverMetrics->totalTransferredBytes = strtol(strtok(NULL, ";"), NULL, 10);
             serverMetrics->totalReceivedBytes = strtol(strtok(NULL, ";"), NULL, 10);
             serverMetrics->totalCountUsers = strtol(strtok(NULL, "\n"), NULL, 10);
-            // fprintf(stdout, "%ld,%ld,%ld,%ld\n", serverMetrics->totalCountConnections, serverMetrics->totalTransferredBytes, serverMetrics->totalReceivedBytes, serverMetrics->totalCountUsers);
         }
     }
     else {
