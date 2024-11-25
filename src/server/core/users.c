@@ -3,90 +3,30 @@
 #include <stdlib.h>
 #include <string.h>
 
-static user users[MAX_USERS];
+//static user users[MAX_USERS];
+
+static user * users = NULL;
 static int usersCount = 0;
 
 //----------------------------------------Private functions-----------------------------------------
-static int getIndexOf(const char* username) {
-    int index = -1;
-    bool found = false;
-    for(int i=0; i < usersCount && !found; i++) {
-        if(strcmp(username, users[i].username) == 0) {
-            index = i;
-            found = true;
+static user * getUserByUsername(const char* username) {
+    user * current = users;
+    while(current) {
+        if(strcmp(username, current->username) == 0) {
+            return current;
         }
+        current = current->next;
     }
-    return index;
+    return NULL;
 }
-
-static void persistUser(const char *username, const char *password, unsigned int role) {
-    FILE *file = fopen(USERS_CSV, "a");
-    if (!file) {
-        perror("Error al abrir el archivo " USERS_CSV "\n");
-        return;
-    }
-
-    fprintf(file, "%s;%s;%u\n", username, password, role);
-    fclose(file);
-}
-
 //---------------------------------------Public functions--------------------------------------------
 bool userExists(const char* username) {
-  int index = getIndexOf(username);
-  return index >= 0;
+  return getUserByUsername(username) != NULL;
 }
 
-int initializeRegisteredUsers() {
-    FILE *file = fopen(USERS_CSV, "r");
-    if (!file) {
-        file = fopen(USERS_CSV, "w");
-        if (!file) {
-            fprintf(stderr , "Error creating file %s\n", USERS_CSV);
-            return -1;
-        }
-        fclose(file);
-        return 0;
-    }
+void addUser(const char* username, const char* password, unsigned int role) {
+    fprintf(stderr, "Entro %d\n", ++usersCount);
 
-    char line[1024];
-
-    int adminFound = -1;
-    while (fgets(line, sizeof(line), file)) {
-        if (line[0] == '\n' || line[0] == '\r') {
-            continue;
-        }
-
-        char *username = strtok(line, ";");
-        char *password = strtok(NULL, ";");
-        char *roleStr = strtok(NULL, "\n");
-
-        if (username && password && roleStr && usersCount < MAX_USERS) {
-            if(strcmp(roleStr, "1") == 0){
-                if(strcmp(username, DEFAULT_ADMIN_USERNAME) == 0){
-                    adminFound = 1;
-                }
-                users[usersCount].role = ROLE_ADMIN;
-            } else{
-                users[usersCount].role = ROLE_USER;
-            }
-            strncpy(users[usersCount].username, username, USERS_MAX_USERNAME_LENGTH);
-            users[usersCount].username[USERS_MAX_USERNAME_LENGTH] = '\0';
-            strncpy(users[usersCount].password, password, USERS_MAX_PASSWORD_LENGTH);
-            users[usersCount].password[USERS_MAX_PASSWORD_LENGTH] = '\0';
-            usersCount++;
-        }
-    }
-
-    if(adminFound < 0){
-        usersCreate(DEFAULT_ADMIN_USERNAME, DEFAULT_ADMIN_PASSWORD, ROLE_ADMIN);
-    }
-
-    fclose(file);
-    return 0;
-}
-
-
-void usersCreate(const char* username, const char* password, unsigned int role) {
     if(usersCount >= MAX_USERS) {
         fprintf(stderr, "ERROR: Too many users (%d). Max limit: %d\n", usersCount, MAX_USERS);
         return;
@@ -101,32 +41,52 @@ void usersCreate(const char* username, const char* password, unsigned int role) 
         return;
     }
 
-    strcpy(users[usersCount].username, username);
-    strcpy(users[usersCount].password, password);
-    users[usersCount].role = role;
-    usersCount++;
+    if(*username > USERS_MAX_USERNAME_LENGTH) {
+        fprintf(stderr, "ERROR: Username too long. Max length: %d\n", USERS_MAX_USERNAME_LENGTH);
+        return;
+    }
 
-    // Agregarlo al csv.
-    persistUser(username, password, role);
+    if(*password > USERS_MAX_PASSWORD_LENGTH) {
+        fprintf(stderr, "ERROR: Password too long. Max length: %d\n", USERS_MAX_PASSWORD_LENGTH);
+        return;
+    }
+
+    user * newUser = malloc(sizeof(user));
+    if(newUser == NULL) {
+        fprintf(stderr, "ERROR: Insuficient memory to allocate a new user\n");
+        return;
+    }
+    if(users == NULL) {
+        users = newUser;
+    } else {
+        newUser->next = users;
+        users = newUser;
+    }
+
+    newUser->username = malloc(strlen(username) + 1);
+    newUser->password = malloc(strlen(password) + 1);
+
+    strcpy(newUser->username, username);
+    strcpy(newUser->password, password);
+
+    newUser->role = role;
+    newUser->isBlocked = false;
+    usersCount++;
 }
 
 bool userLogin(const char* username, const char* password) {
-    int index = getIndexOf(username);
-    if(index < 0 || strcmp(users[index].password, password) != 0)
+    user * maybeLoggedUser = getUserByUsername(username);
+    if(maybeLoggedUser == NULL || strcmp(maybeLoggedUser->password, password) != 0)
         return false;
     return true;
 }
 
 bool userLoginAdmin(const char* username, const char* password){
-    int index = getIndexOf(username);
-    if(index < 0 || strcmp(users[index].password, password) != 0 || !users[index].role)
+    user * maybeLoggedAdmin = getUserByUsername(username);
+    if(maybeLoggedAdmin == NULL || strcmp(maybeLoggedAdmin->password, password) != 0 || maybeLoggedAdmin->role != ROLE_ADMIN) {
         return false;
-    return true;
-}
-void getUsers(char** user_list) {
-    for (int i = 0; i < usersCount; i++) {
-        strcpy(user_list[i], users[i].username);
     }
+    return true;
 }
 
 int getUsersCount(){

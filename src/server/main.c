@@ -38,13 +38,6 @@ int main(const int argc, char** argv) {
     signal(SIGTERM, sigterm_handler);
     signal(SIGINT, sigterm_handler);
 
-    //------------------------- Levantar usuarios ya registrados de un archivo -----------------------------------------
-
-    if (initializeRegisteredUsers() < 0) {
-        fprintf(stderr, "An error has occurred while fetching registered users.\n");
-        return -1;
-    }
-
     //------------------------- Parsear argumentos ---------------------------------------------------------------------
 
     struct pop3Args args;
@@ -54,7 +47,8 @@ int main(const int argc, char** argv) {
     parse_args(argc, argv, &args);
 
     for (unsigned int i = 0; i < args.nusers; i++) {
-        usersCreate(args.users[i].name, args.users[i].pass, ROLE_USER);
+        fprintf(stderr, "Entro al for de add user\n");
+        addUser(args.users[i].name, args.users[i].pass, ROLE_USER);
     }
 
     if (args.maildir == NULL) {
