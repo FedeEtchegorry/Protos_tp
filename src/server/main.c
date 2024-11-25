@@ -18,11 +18,11 @@
 
 static bool done = false;
 
-static server_configuration clientServerConfig = {0};
-static server_configuration managerServerConfig = {0};
+server_configuration clientServerConfig = {0};
+server_configuration managerServerConfig = {0};
 
-static server_metrics *clientMetrics = NULL;
-static server_metrics *managerMetrics = NULL;
+server_metrics *clientMetrics = NULL;
+server_metrics *managerMetrics = NULL;
 
 static void sigterm_handler(const int signal) {
 
@@ -90,8 +90,8 @@ int main(const int argc, char** argv) {
 
     //-------------------------- MANAGER: Defino estructura para el socket para soportar IPv6  -------------------------
 
-    int managerServer = -1;
     struct sockaddr_in6 managerAddr = {0};
+    int managerServer = -1;
 
     managerAddr.sin6_family = AF_INET6;
     managerAddr.sin6_port = htons(args.mng_port);

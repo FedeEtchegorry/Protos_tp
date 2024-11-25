@@ -6,7 +6,7 @@
 #include "./client/pop3Parser.h"
 #include "./client/pop3Server.h"
 
-//------------------------------------- Generic handler (just to support pipelining)-------------------------
+//------------------------------------- Generic handler (just to support pipelining)  -------------------------
 
 unsigned readOnReady(struct selector_key * key) {
   userData * data = ATTACHMENT_USER(key);

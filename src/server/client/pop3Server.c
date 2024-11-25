@@ -12,9 +12,8 @@
 #include "../core/stm.h"
 #include "../logging/auth.h"
 
-#define BUFFER_SIZE 8192
-
-char* mailDirectory = NULL;
+char * mailDirectory = NULL;
+extern server_configuration clientServerConfig;
 
 //------------------------------------- Array de estados para la stm ---------------------------------------------------
 
@@ -60,11 +59,11 @@ clientData* newClientData(const struct sockaddr_storage clientAddress) {
     clientData->data.stateMachine.states = stateHandlers;
     stm_init(&clientData->data.stateMachine);
 
-    uint8_t* readBuffer = malloc(BUFFER_SIZE);
-    uint8_t* writeBuffer = malloc(BUFFER_SIZE);
+    uint8_t* readBuffer = malloc(clientServerConfig.ioReadBufferSize);
+    uint8_t* writeBuffer = malloc(clientServerConfig.ioWriteBufferSize);
 
-    buffer_init(&clientData->data.readBuffer, BUFFER_SIZE, readBuffer);
-    buffer_init(&clientData->data.writeBuffer, BUFFER_SIZE, writeBuffer);
+    buffer_init(&clientData->data.readBuffer, clientServerConfig.ioReadBufferSize, readBuffer);
+    buffer_init(&clientData->data.writeBuffer, clientServerConfig.ioWriteBufferSize, writeBuffer);
 
     const methodsMap *map = getPop3Methods();
 

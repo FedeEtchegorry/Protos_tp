@@ -9,6 +9,7 @@ typedef struct {
   size_t currentConectionsCount;
   size_t totalBytesTransferred;
   size_t totalBytesReceived;
+  size_t totalUsers;
   const size_t *ioReadBufferSize;
   const size_t *ioWriteBufferSize;
 

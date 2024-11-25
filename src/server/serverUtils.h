@@ -54,4 +54,7 @@ bool readAndParse(struct selector_key* key);
 
 fd_handler* getHandler();
 
+fd_handler* getHandlerForClient();
+fd_handler* getHandlerForManager();
+
 #endif // PROTOS_TP_SERVERUTILS_H
