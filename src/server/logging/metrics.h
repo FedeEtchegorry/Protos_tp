@@ -19,6 +19,8 @@ server_metrics *serverMetricsCreate(char *dataFilePath, const size_t *ioReadBuff
 
 void serverMetricsFree(server_metrics** metrics);
 
+void serverMetricsRecordNewUser(server_metrics* metrics);
+
 void serverMetricsRecordNewConection(server_metrics* metrics);
 
 void serverMetricsRecordDropConection(server_metrics* metrics);
@@ -26,8 +28,6 @@ void serverMetricsRecordDropConection(server_metrics* metrics);
 void serverMetricsRecordBytesTransferred(server_metrics* metrics, size_t bytes);
 
 void serverMetricsRecordBytesReceived(server_metrics* metrics, size_t bytes);
-
-void serverMetricsReset(server_metrics* metrics);
 
 int serverMetricsRecordInFile(server_metrics *metrics);
 

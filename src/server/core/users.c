@@ -4,9 +4,9 @@
 #include <string.h>
 
 #include "../serverConfigs.h"
+#include "../logging/metrics.h"
 
-//static user users[MAX_USERS];
-
+extern server_metrics *clientMetrics;
 static user * users = NULL;
 static int usersCount = 0;
 
@@ -76,6 +76,7 @@ bool addUser(const char* username, const char* password, const unsigned int role
 
     newUser->role = role;
     usersCount++;
+    serverMetricsRecordNewUser(clientMetrics);
     return true;
 }
 
