@@ -11,22 +11,7 @@
 #define ERROR_MSG             "-ERR "
 #define ATTACHMENT_USER(key)  ((userData *)(key->data))
 
-enum states_from_stm {
-  GREETINGS,
-  AUTHORIZATION,
-  TRANSACTION,
-  UPDATE,
-  DONE,
-  ERROR,
-};
 
-enum states_from_stm_manager {
-  MANAGER_GREETINGS,
-  MANAGER_AUTHORIZATION,
-  MANAGER_TRANSACTION,
-  MANAGER_DONE,
-  MANAGER_ERROR,
-};
 
 typedef struct userData {
 
@@ -47,20 +32,7 @@ void writeInBuffer(struct selector_key* key, bool hasStatusCode, bool isError, c
 bool sendFromBuffer(struct selector_key* key);
 bool readAndParse(struct selector_key* key);
 
-void server_done(struct selector_key* key);
-void pop3_read(struct selector_key*key);
-void manager_read(struct selector_key* key);
-void pop3_write(struct selector_key* key);
-void manager_write(struct selector_key* key);
-void pop3_block(struct selector_key* key);
-void manager_block(struct selector_key* key);
-void server_close(struct selector_key* key);
-
-fd_handler* getHandlerForClient();
-fd_handler* getHandlerForManager();
 
 
-fd_handler* getHandlerForClient();
-fd_handler* getHandlerForManager();
 
 #endif // PROTOS_TP_SERVERUTILS_H

@@ -16,6 +16,15 @@
 char * mailDirectory = NULL;
 extern server_configuration clientServerConfig;
 
+enum states_from_stm {
+  GREETINGS,
+  AUTHORIZATION,
+  TRANSACTION,
+  UPDATE,
+  DONE,
+  ERROR,
+};
+
 //------------------------------------- Array de estados para la stm ---------------------------------------------------
 
 static const struct state_definition stateHandlers[] = {
@@ -103,11 +112,54 @@ void freeClientData(struct clientData** clientData) {
 
 //------------------------------ Passive Socket ------------------------------------------------------------------------
 
+static void pop3_done(struct selector_key* key) {
+    userData * data = ATTACHMENT_USER(key);
+    if (data->closed)
+        return;
+    data->closed = true;
+    selector_unregister_fd(key->s, key->fd);
+    close(key->fd);
+
+    free(data->readBuffer.data);
+    free(data->writeBuffer.data);
+    free(data);
+}
+void pop3_read(struct selector_key*key){
+    struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
+    const enum states_from_stm st = stm_handler_read(stm, key);
+
+    if (ERROR == st || DONE == st) {
+        pop3_done(key);
+    }
+}
+void pop3_write(struct selector_key* key){
+    struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
+    const enum states_from_stm st = stm_handler_write(stm, key);
+
+    if (ERROR == st || DONE == st) {
+        pop3_done(key);
+    }
+}
+void pop3_block(struct selector_key* key){
+    struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
+    const enum states_from_stm st = stm_handler_block(stm, key);
+
+    if (ERROR == st || DONE == st) {
+        pop3_done(key);
+    }
+}
+void pop3_close(struct selector_key* key) {
+    struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
+    stm_handler_close(stm, key);
+    pop3_done(key);
+}
+
+
 static fd_handler handler = {
     .handle_read = pop3_read,
     .handle_write = pop3_write,
     .handle_block = pop3_block,
-    .handle_close = server_close,
+    .handle_close = pop3_close,
 };
 
 void pop3PassiveAccept(struct selector_key* key) {

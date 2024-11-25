@@ -30,14 +30,13 @@ typedef struct managerData {
 
 //--------------------------------------------- Manager States ---------------------------------------------------------
 
-//enum manager_server_state {
-//  GREETINGS_MNG,
-//  AUTHORIZATION_MNG,
-//  TRANSACTION_MNG,
-//  DONE_MNG,
-//  ERROR_MNG,
-//  UPDATE_MNG
-//};
+enum states_from_stm_manager {
+  MANAGER_GREETINGS,
+  MANAGER_AUTHORIZATION,
+  MANAGER_TRANSACTION,
+  MANAGER_DONE,
+  MANAGER_ERROR,
+};
 
 //--------------------------------------------- Public Functions -------------------------------------------------------
 

@@ -72,11 +72,55 @@ managerData * newManagerData(const struct sockaddr_storage managerAddress) {
 
 //------------------------------ Passive Socket ------------------------------------------------------------------------
 
+void manager_done(struct selector_key* key) {
+  userData * data = ATTACHMENT_USER(key);
+  if (data->closed)
+    return;
+  data->closed = true;
+  selector_unregister_fd(key->s, key->fd);
+  close(key->fd);
+
+  free(data->readBuffer.data);
+  free(data->writeBuffer.data);
+  free(data);
+}
+
+void manager_read(struct selector_key* key) {
+  struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
+  const enum states_from_stm_manager st = stm_handler_read(stm, key);
+
+  if (MANAGER_ERROR == st || MANAGER_DONE == st) {
+    manager_done(key);
+  }
+}
+void manager_write(struct selector_key* key){
+  struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
+  const enum states_from_stm_manager st = stm_handler_write(stm, key);
+
+  if (MANAGER_ERROR == st || MANAGER_DONE == st) {
+    manager_done(key);
+  }
+}
+
+void manager_block(struct selector_key* key) {
+  struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
+  const enum states_from_stm_manager st = stm_handler_block(stm, key);
+
+  if (MANAGER_ERROR == st || MANAGER_DONE == st) {
+    manager_done(key);
+  }
+}
+void manager_close(struct selector_key* key) {
+  struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
+  stm_handler_close(stm, key);
+  manager_done(key);
+}
+
 static fd_handler handler = {
     .handle_read = manager_read,
     .handle_write = manager_write,
     .handle_block = manager_block,
-    .handle_close = server_close,
+    .handle_close = manager_close,
 };
 
 
@@ -107,7 +151,6 @@ fail:
     close(manager);
   }
 }
-
 
 
 //------------------------------------- Generic handler for MANAGER -------------------------
