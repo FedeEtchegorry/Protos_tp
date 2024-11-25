@@ -24,8 +24,9 @@ bool userExists(const char* username) {
   return getUserByUsername(username) != NULL;
 }
 
-void addUser(const char* username, const char* password, unsigned int role) {
-    fprintf(stderr, "Entro %d\n", ++usersCount);
+void addUser(const char* username, const char* password, const unsigned int role) {
+    unsigned int usernameLength = strlen(username);
+    unsigned int passwordLength = strlen(password);
 
     if(usersCount >= MAX_USERS) {
         fprintf(stderr, "ERROR: Too many users (%d). Max limit: %d\n", usersCount, MAX_USERS);
@@ -41,12 +42,12 @@ void addUser(const char* username, const char* password, unsigned int role) {
         return;
     }
 
-    if(*username > USERS_MAX_USERNAME_LENGTH) {
+    if(usernameLength > USERS_MAX_USERNAME_LENGTH) {
         fprintf(stderr, "ERROR: Username too long. Max length: %d\n", USERS_MAX_USERNAME_LENGTH);
         return;
     }
 
-    if(*password > USERS_MAX_PASSWORD_LENGTH) {
+    if(passwordLength > USERS_MAX_PASSWORD_LENGTH) {
         fprintf(stderr, "ERROR: Password too long. Max length: %d\n", USERS_MAX_PASSWORD_LENGTH);
         return;
     }
@@ -63,8 +64,8 @@ void addUser(const char* username, const char* password, unsigned int role) {
         users = newUser;
     }
 
-    newUser->username = malloc(strlen(username) + 1);
-    newUser->password = malloc(strlen(password) + 1);
+    newUser->username = malloc(usernameLength + 1);
+    newUser->password = malloc(passwordLength + 1);
 
     strcpy(newUser->username, username);
     strcpy(newUser->password, password);
