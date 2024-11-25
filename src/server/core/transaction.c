@@ -19,6 +19,18 @@
 #define MAX_AUX_BUFFER_SIZE    255
 #define MAX_DIRENT_SIZE        512
 
+static int checkNoiseArguments(struct selector_key* key){
+  clientData* data = ATTACHMENT(key);
+  char message[MAX_AUX_BUFFER_SIZE];
+  if (data->data.parser.arg2 != NULL) {
+    snprintf(message, MAX_AUX_BUFFER_SIZE, "%s %s", NOISE_ARGUMENTS, data->data.parser.arg2);
+    writeInBuffer(key, true, true, message, strlen(message));
+    return 1;
+  }
+  return 0;
+}
+
+
 static long int checkEmailNumber(struct selector_key* key, long int * result) {
     clientData* data = ATTACHMENT(key);
     errno=0;
@@ -42,12 +54,9 @@ static long int checkEmailNumber(struct selector_key* key, long int * result) {
 
 static void handleList(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    char message[MAX_AUX_BUFFER_SIZE];
-    if (data->data.parser.arg2!=NULL){
-        snprintf(message, MAX_AUX_BUFFER_SIZE, "%s",NOISE_ARGUMETS);
-        writeInBuffer(key, true, true, NOISE_ARGUMETS, strlen(message));
+    if (checkNoiseArguments(key))
         return;
-    }
+    char message[MAX_AUX_BUFFER_SIZE];
     if (data->data.parser.arg == NULL) {
         unsigned notDeleted = 0;
         for (unsigned i = 0; i < data->mailCount; i++) {
@@ -82,11 +91,8 @@ static void handleList(struct selector_key* key) {
 static void handleRetr(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
     char auxBuffer[MAX_AUX_BUFFER_SIZE];
-    if (data->data.parser.arg2!=NULL){
-        snprintf(auxBuffer, MAX_AUX_BUFFER_SIZE, "%s",NOISE_ARGUMETS);
-        writeInBuffer(key, true, true, NOISE_ARGUMETS, strlen(auxBuffer));
+    if (checkNoiseArguments(key))
         return;
-    }
     long int msgNumber;
     if (checkEmailNumber(key, &msgNumber) == 0) {
 

@@ -66,15 +66,13 @@ void processBuffer(parser *parser) {
       fprintf(stderr, "Memory allocation failed for argument\n");
     }
   }
-  char *argument2 = strtok(NULL, " ");
+  char *argument2 = strtok(NULL, "\n");
   if (argument2 != NULL) {
     parser->arg2 = strdup(argument2);
     if (parser->arg2 == NULL) {
       fprintf(stderr, "Memory allocation failed for argument\n");
     }
-} else parser->arg2 =NULL;
-
-
+  } else parser->arg2 =NULL;
 
   printf("Command: %s, Method: %d, Arg: %s, Arg2: %s\n",
          command, parser->method, parser->arg ? parser->arg : "(none)", parser->arg2 ? parser->arg2 : "(none)");
