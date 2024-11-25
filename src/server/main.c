@@ -19,10 +19,7 @@
 static bool done = false;
 
 server_configuration clientServerConfig = {0};
-server_configuration managerServerConfig = {0};
-
 server_metrics *clientMetrics = NULL;
-server_metrics *managerMetrics = NULL;
 
 static void sigterm_handler(const int signal) {
 
@@ -67,11 +64,7 @@ int main(const int argc, char** argv) {
 
     clientServerConfig.ioReadBufferSize = DEFAULT_IO_BUFFER_SIZE;
     clientServerConfig.ioWriteBufferSize = DEFAULT_IO_BUFFER_SIZE;
-    managerServerConfig.ioReadBufferSize = DEFAULT_IO_BUFFER_SIZE;
-    managerServerConfig.ioWriteBufferSize = DEFAULT_IO_BUFFER_SIZE;
-
     clientMetrics = serverMetricsCreate(HISTORIC_DATA_FILE, &clientServerConfig.ioReadBufferSize, &clientServerConfig.ioWriteBufferSize);
-    managerMetrics = serverMetricsCreate(NULL, &managerServerConfig.ioReadBufferSize, &managerServerConfig.ioWriteBufferSize);
 
     initMaildir(args.maildir);
 
