@@ -44,6 +44,11 @@ static const struct state_definition stateHandlers[] = {
         .on_write_ready=writeOnReadyPop3,
     },
     {
+        .state = EXIT,
+        .on_arrival = exitOnArrival,
+        .on_write_ready=writeOnReadyPop3,
+    },
+    {
         .state = DONE,
     },
     {
@@ -235,6 +240,9 @@ unsigned writeOnReadyPop3(struct selector_key * key) {
           next = TRANSACTION;
           break;
         case UPDATE:
+          next = DONE;
+          break;
+        case EXIT:
           next = DONE;
         }
 

@@ -14,6 +14,7 @@ enum manager_methods {
   RST,
   SHOW,
   DATA,
+  CAPA_M,
   QUIT_M,
   UNKNOWN_M
 };
