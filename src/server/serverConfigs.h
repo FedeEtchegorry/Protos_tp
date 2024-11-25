@@ -2,7 +2,7 @@
 #define SERVER_CONFIGS_H
 
 #include <unistd.h>
-
+#include<stdbool.h>
 // ----------------------------------- MAIN ----------------------------------------------------------------------------
 
 #define DEFAULT_PORT                    1080
@@ -51,6 +51,7 @@
 
 #define DEBUG_PRINT_LOCATION()          fprintf(stdout, "Archivo: %s, Funcion: %s, Linea: %d\n", __FILE__, __func__, __LINE__)
 
+
 typedef struct {
 
     size_t ioReadBufferSize;
@@ -58,10 +59,6 @@ typedef struct {
 
 } server_configuration;
 
-bool serverBlocked = false;
-
-inline void setServerBlocked(bool block) {
-    serverBlocked = block;
-}
-
+void setServerBlocked(bool block);
+bool isServerBlocked();
 #endif // SERVER_CONFIGS_H

@@ -1,7 +1,6 @@
 #ifndef USERS_H
 #define USERS_H
 
-#include <stdbool.h>
 #include "../serverConfigs.h"
 
 typedef enum { ROLE_USER = 0, ROLE_ADMIN = 1 } Role;
