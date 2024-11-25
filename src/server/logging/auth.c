@@ -22,6 +22,11 @@ static void handleCapa(struct selector_key* key){
   snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "AUTH");
   writeInBuffer(key, false, false, method, strlen(method));
 
+snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "UIDL");
+  writeInBuffer(key, false, false, method, strlen(method));
+
+
+
   snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "PIPELINING");
   writeInBuffer(key, false, false, method, strlen(method));
 

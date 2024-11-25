@@ -52,6 +52,43 @@ static long int checkEmailNumber(struct selector_key* key, long int * result) {
     return 0;
 }
 
+static unsigned long int generateUIDL(const char *filename) {
+    time_t now = time(NULL);
+    unsigned long checksum = 0;
+    for (const char *ptr = filename; *ptr; ptr++) {
+        checksum += *ptr;
+    }
+    return checksum*now;
+}
+
+static void handleUIDL(struct selector_key* key) {
+    clientData *data = ATTACHMENT(key);
+    char message[MAX_AUX_BUFFER_SIZE];
+    if (checkNoiseArguments(key)){
+        return;
+    }
+    if (data->data.parser.arg == NULL) {
+        writeInBuffer(key, true, false, "", strlen(""));
+        for (long int i = 0; i < data->mailCount; i++) {
+          if (!(data->mails[i]->deleted)) {
+            long unsigned int uidl = data->mails[i]->checksum;
+            sprintf(message, "%li %lu", i+1, uidl);
+            writeInBuffer(key, false, false, message, strlen(message));
+          }
+        }
+        sprintf(message, ".");
+        writeInBuffer(key, false, false, message, strlen(message));
+        return;
+    }
+    if (data->data.parser.arg != NULL) {
+        long int mail_num = strtol(data->data.parser.arg, NULL, 10);
+        if (checkEmailNumber(key, &mail_num) == 0) {
+          long unsigned int uidl = data->mails[mail_num-1]->checksum;
+          sprintf(message, "%ld %lu", mail_num, uidl);
+          writeInBuffer(key, true, false, message, strlen(message));
+        }
+    }
+}
 
 static void handleList(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
@@ -244,6 +281,7 @@ static void loadMails(clientData* data) {
             info->size = calculateOctetLength(mailPath);
             info->seen = (i == 1);
             info->deleted = false;
+            info->checksum= generateUIDL(info->filename);
 
             data->mails[data->mailCount++] = info;
         }
@@ -284,6 +322,9 @@ unsigned transactionOnReadReady(struct selector_key* key) {
         break;
     case QUIT:
         return UPDATE;
+        break;
+    case UIDL:
+        handleUIDL(key);
         break;
     default:
         handleUnknown(key);

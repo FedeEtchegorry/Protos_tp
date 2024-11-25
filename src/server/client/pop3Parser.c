@@ -5,7 +5,7 @@
 static const methodsMap pop3Methods[] = {
     {"USER", USER}, {"PASS", PASS}, {"LIST", LIST}, {"STAT", STAT},
     {"RSET", RSET}, {"DELE", DELE}, {"NOOP", NOOP},
-    {"RETR", RETR}, {"CAPA", CAPA},{"QUIT", QUIT},
+    {"RETR", RETR}, {"CAPA", CAPA}, {"UIDL", UIDL},{"QUIT", QUIT},
     {NULL, UNKNOWN}
 };
 
