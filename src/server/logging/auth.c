@@ -12,12 +12,20 @@
 #define MAX_AUX_BUFFER_SIZE    255
 //--------------------------------- Private Functions -------------------------------
 static void handleCapa(struct selector_key* key){
-  const methodsMap * methods = getPop3Methods();
-  char method[BUFSIZ];
-  for (int i = 0; methods[i].command!=NULL; i++) {
-    snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", methods[i].command);
-    writeInBuffer(key, true, false, method, strlen(method));
-  }
+  char method[MAX_AUX_BUFFER_SIZE];
+  snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "Capability list follows");
+  writeInBuffer(key, true, false, method, strlen(method));
+
+  snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "USER");
+  writeInBuffer(key, false, false, method, strlen(method));
+
+  snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "AUTH");
+  writeInBuffer(key, false, false, method, strlen(method));
+
+  snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "PIPELINING");
+  writeInBuffer(key, false, false, method, strlen(method));
+
+  writeInBuffer(key, false, false, ".", strlen("."));
 }
 
 static void handleUsername(struct selector_key* key) {
@@ -120,7 +128,6 @@ unsigned authOnReadReadyAdmin(struct selector_key* key) {
             break;
     case QUIT_M:
             return EXIT;
-
     default:
             handleUnknown(key);
     }
