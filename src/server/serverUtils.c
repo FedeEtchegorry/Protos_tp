@@ -6,123 +6,10 @@
 #include "./client/pop3Parser.h"
 #include "./client/pop3Server.h"
 
-//------------------------------------- Generic handler (just to support pipelining)  -------------------------
-
-unsigned readOnReady(struct selector_key * key) {
-  userData * data = ATTACHMENT_USER(key);
-  bool isFinished = readAndParse(key);
-  if (isFinished) {
-    printf("Entrando a read finished\n");
-    unsigned next = UNKNOWN;
-    switch (stm_state(&data->stateMachine)) {
-    case AUTHORIZATION:
-      next = authOnReadReady(key);
-      break;
-    case TRANSACTION:
-      next= transactionOnReadReady(key);
-      break;
-    }
-    resetParser(&data->parser);
-    selector_set_interest_key(key, OP_WRITE);
-    return next;
-  }
-  return stm_state(&data->stateMachine);
-}
-
-unsigned writeOnReady(struct selector_key * key) {
-  userData * data = ATTACHMENT_USER(key);
-  bool isFinished = sendFromBuffer(key);
-  if (isFinished) {
-    unsigned next = UNKNOWN;
-    switch (stm_state(&data->stateMachine)) {
-    case GREETINGS:
-      next = AUTHORIZATION;
-      break;
-    case AUTHORIZATION:
-      if (data->isAuth)
-        next = TRANSACTION;
-      else
-        next = AUTHORIZATION;
-      break;
-    case TRANSACTION:
-      next = TRANSACTION;
-      break;
-    case UPDATE:
-      next = DONE;
-    }
-
-    if (!buffer_can_read(&data->readBuffer)) {
-      selector_set_interest_key(key, OP_READ);
-      return next;
-    }
-
-    printf("queda algo en el buffer y salto a %d", next);
-    jump(&data->stateMachine, next, key);
-    selector_set_interest_key(key, OP_READ);
-    readOnReady(key);
-  }
-  return stm_state(&data->stateMachine);
-}
-
-//------------------------------------- Generic handler for MANAGER -------------------------
-
-unsigned readOnReadyManager(struct selector_key * key) {
-  userData * data = ATTACHMENT_USER(key);
-  bool isFinished = readAndParse(key);
-  if (isFinished) {
-    printf("Entrando a read finished de MANAGER\n");
-    unsigned next = UNKNOWN;
-    switch (stm_state(&data->stateMachine)) {
-    case MANAGER_AUTHORIZATION:
-      next = authOnReadReadyAdmin(key);
-      break;
-    case MANAGER_TRANSACTION:
-      next = transactionManagerOnReadReady(key);
-      break;
-    }
-    resetParser(&data->parser);
-    selector_set_interest_key(key, OP_WRITE);
-    return next;
-  }
-  return stm_state(&data->stateMachine);
-}
-
-unsigned writeOnReadyManager(struct selector_key * key) {
-  userData * data = ATTACHMENT_USER(key);
-  bool isFinished = sendFromBuffer(key);
-  if (isFinished) {
-    unsigned next = UNKNOWN;
-    switch (stm_state(&data->stateMachine)) {
-    case MANAGER_GREETINGS:
-      next = MANAGER_AUTHORIZATION;
-      break;
-    case MANAGER_AUTHORIZATION:
-      if (data->isAuth)
-        next = MANAGER_TRANSACTION;
-      else
-        next = MANAGER_AUTHORIZATION;
-      break;
-    case MANAGER_TRANSACTION:
-      next = MANAGER_TRANSACTION;
-      break;
-    }
-
-    if (!buffer_can_read(&data->readBuffer)) {
-      selector_set_interest_key(key, OP_READ);
-      return next;
-    }
-
-    printf("queda algo en el buffer y salto a %d", next);
-    jump(&data->stateMachine, next, key);
-    selector_set_interest_key(key, OP_READ);
-    readOnReady(key);
-  }
-  return stm_state(&data->stateMachine);
-}
 
 //------------------------------- Handlers for selector -----------------------------------------------
 
-static void server_done(struct selector_key* key) {
+void server_done(struct selector_key* key) {
   userData * data = ATTACHMENT_USER(key);
   if (data->closed)
     return;
@@ -135,7 +22,7 @@ static void server_done(struct selector_key* key) {
   free(data);
 }
 
-static void server_read(struct selector_key* key) {
+void pop3_read(struct selector_key*key){
   struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
   const enum states_from_stm st = stm_handler_read(stm, key);
 
@@ -144,7 +31,17 @@ static void server_read(struct selector_key* key) {
   }
 }
 
-static void server_write(struct selector_key* key) {
+void manager_read(struct selector_key* key) {
+  struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
+  const enum states_from_stm_manager st = stm_handler_read(stm, key);
+
+  if (MANAGER_ERROR == st || MANAGER_DONE == st) {
+    server_done(key);
+  }
+}
+
+
+void pop3_write(struct selector_key* key){
   struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
   const enum states_from_stm st = stm_handler_write(stm, key);
 
@@ -153,7 +50,16 @@ static void server_write(struct selector_key* key) {
   }
 }
 
-static void server_block(struct selector_key* key) {
+void manager_write(struct selector_key* key){
+  struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
+  const enum states_from_stm_manager st = stm_handler_write(stm, key);
+
+  if (MANAGER_ERROR == st || MANAGER_DONE == st) {
+    server_done(key);
+  }
+}
+
+void pop3_block(struct selector_key* key){
   struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
   const enum states_from_stm st = stm_handler_block(stm, key);
 
@@ -161,22 +67,22 @@ static void server_block(struct selector_key* key) {
     server_done(key);
   }
 }
-static void server_close(struct selector_key* key) {
+
+void manager_block(struct selector_key* key) {
+  struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
+  const enum states_from_stm_manager st = stm_handler_block(stm, key);
+
+  if (ERROR == st || DONE == st) {
+    server_done(key);
+  }
+}
+void server_close(struct selector_key* key) {
   struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
   stm_handler_close(stm, key);
   server_done(key);
 }
 
-static fd_handler handler = {
-    .handle_read = server_read,
-    .handle_write = server_write,
-    .handle_block = server_block,
-    .handle_close = server_close,
-};
 
-fd_handler* getHandler(){
-    return &handler;
-}
 
 void writeInBuffer(struct selector_key* key, bool hasStatusCode, bool isError, char* msg, long len) {
   userData * data = ATTACHMENT_USER(key);

@@ -21,5 +21,7 @@ typedef struct clientData {
 void initMaildir(const char * directory);
 void pop3PassiveAccept(struct selector_key* key);
 void freeClientData(struct clientData** clientData);
+unsigned writeOnReadyPop3(struct selector_key * key);
+unsigned readOnReadyPop3(struct selector_key * key);
 
 #endif // POP3STATEMACHINE_H

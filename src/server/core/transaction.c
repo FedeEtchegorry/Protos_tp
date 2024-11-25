@@ -267,6 +267,7 @@ unsigned transactionOnReadReady(struct selector_key* key) {
         break;
     case QUIT:
         return UPDATE;
+        break;
     default:
         handleUnknown(key);
     }
@@ -285,11 +286,10 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
     case DATA:
         get_stored_data();
         break;
-    case QUIT:
-        return UPDATE;
-        break;
+    case QUIT_M:
+        return MANAGER_DONE;
     default:
         handleUnknown(key);
     }
-    return TRANSACTION;
+    return MANAGER_TRANSACTION;
 }

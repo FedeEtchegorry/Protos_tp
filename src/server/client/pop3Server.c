@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <stdio.h>
 
 #include "pop3Parser.h"
 
@@ -21,27 +22,29 @@ static const struct state_definition stateHandlers[] = {
     {
         .state = GREETINGS,
         .on_arrival = greetingOnArrival,
-        .on_write_ready = writeOnReady
+        .on_write_ready = writeOnReadyPop3
     },
     {
         .state = AUTHORIZATION,
         .on_arrival = authOnArrival,
-        .on_read_ready = readOnReady,
-        .on_write_ready = writeOnReady,
+        .on_read_ready = readOnReadyPop3,
+        .on_write_ready = writeOnReadyPop3,
     },
     {
         .state = TRANSACTION,
         .on_arrival = transactionOnArrival,
-        .on_read_ready = readOnReady,
-        .on_write_ready = writeOnReady,
+        .on_read_ready = readOnReadyPop3,
+        .on_write_ready = writeOnReadyPop3,
     },
     {
         .state = UPDATE,
         .on_arrival = updateOnArrival,
-        .on_write_ready = writeOnReady,
+        .on_write_ready = writeOnReadyPop3,
     },
     {
         .state = DONE,
+        .on_arrival = doneOnArrival,
+        .on_write_ready=writeOnReadyPop3,
     },
     {
         .state = ERROR
@@ -62,6 +65,8 @@ clientData* newClientData(const struct sockaddr_storage clientAddress) {
     uint8_t* readBuffer = malloc(clientServerConfig.ioReadBufferSize);
     uint8_t* writeBuffer = malloc(clientServerConfig.ioWriteBufferSize);
 
+    buffer_init(&clientData->data.readBuffer, clientServerConfig.ioWriteBufferSize, readBuffer);
+    buffer_init(&clientData->data.writeBuffer, clientServerConfig.ioWriteBufferSize, writeBuffer);
     buffer_init(&clientData->data.readBuffer, clientServerConfig.ioReadBufferSize, readBuffer);
     buffer_init(&clientData->data.writeBuffer, clientServerConfig.ioWriteBufferSize, writeBuffer);
 
@@ -98,6 +103,13 @@ void freeClientData(struct clientData** clientData) {
 
 //------------------------------ Passive Socket ------------------------------------------------------------------------
 
+static fd_handler handler = {
+    .handle_read = pop3_read,
+    .handle_write = pop3_write,
+    .handle_block = pop3_block,
+    .handle_close = server_close,
+};
+
 void pop3PassiveAccept(struct selector_key* key) {
 
     struct sockaddr_storage client_addr;
@@ -116,7 +128,7 @@ void pop3PassiveAccept(struct selector_key* key) {
 
     clientData = newClientData(client_addr);
 
-    if (SELECTOR_SUCCESS != selector_register(key->s, client, getHandler(), OP_WRITE, clientData)) {
+    if (SELECTOR_SUCCESS != selector_register(key->s, client, &handler, OP_WRITE, clientData)) {
         goto fail;
     }
 
@@ -134,4 +146,61 @@ fail:
 
 void initMaildir(const char* directory) {
     mailDirectory = strdup(directory);
+}
+
+//------------------------------------- Generic handler (just to support pipelining)-------------------------
+
+unsigned readOnReadyPop3(struct selector_key * key) {
+    userData * data = ATTACHMENT_USER(key);
+    bool isFinished = readAndParse(key);
+    if (isFinished) {
+        printf("Entrando a read finished\n");
+        unsigned next = UNKNOWN;
+        switch (stm_state(&data->stateMachine)) {
+        case AUTHORIZATION:
+          next = authOnReadReady(key);
+          break;
+        case TRANSACTION:
+          next= transactionOnReadReady(key);
+          break;
+        }
+        resetParser(&data->parser);
+        selector_set_interest_key(key, OP_WRITE);
+        return next;
+    }
+    return stm_state(&data->stateMachine);
+}
+
+unsigned writeOnReadyPop3(struct selector_key * key) {
+    userData * data = ATTACHMENT_USER(key);
+    bool isFinished = sendFromBuffer(key);
+    if (isFinished) {
+        unsigned next = UNKNOWN;
+        switch (stm_state(&data->stateMachine)) {
+        case GREETINGS:
+          next = AUTHORIZATION;
+          break;
+        case AUTHORIZATION:
+          if (data->isAuth)
+            next = TRANSACTION;
+          else
+            next = AUTHORIZATION;
+          break;
+        case TRANSACTION:
+          next = TRANSACTION;
+          break;
+        case UPDATE:
+          next = DONE;
+        }
+
+        if (!buffer_can_read(&data->readBuffer)) {
+          selector_set_interest_key(key, OP_READ);
+          return next;
+        }
+        printf("queda algo en el buffer y salto a %d", next);
+        jump(&data->stateMachine, next, key);
+        selector_set_interest_key(key, OP_READ);
+        readOnReadyPop3(key);
+    }
+    return stm_state(&data->stateMachine);
 }
