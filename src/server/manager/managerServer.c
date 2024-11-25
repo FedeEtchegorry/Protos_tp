@@ -8,7 +8,6 @@
 #include "../client/pop3Parser.h"
 #include "stdio.h"
 
-#include "manager.h"
 #include "managerParser.h"
 #include "../update.h"
 

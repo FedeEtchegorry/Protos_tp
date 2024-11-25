@@ -16,15 +16,6 @@
 char * mailDirectory = NULL;
 extern server_configuration clientServerConfig;
 
-enum states_from_stm {
-  GREETINGS,
-  AUTHORIZATION,
-  TRANSACTION,
-  UPDATE,
-  DONE,
-  ERROR,
-};
-
 //------------------------------------- Array de estados para la stm ---------------------------------------------------
 
 static const struct state_definition stateHandlers[] = {
