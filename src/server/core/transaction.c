@@ -287,7 +287,7 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
         //get_stored_data();
         break;
     case QUIT_M:
-        return MANAGER_DONE;
+        return MANAGER_QUIT;
     default:
         handleUnknown(key);
     }

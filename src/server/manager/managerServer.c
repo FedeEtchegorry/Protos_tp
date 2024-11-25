@@ -34,10 +34,13 @@ static const struct state_definition stateHandlers[] = {
         .on_write_ready = writeOnReadyManager,
     },
     {
+        .state = MANAGER_QUIT,
+        .on_arrival = quitOnArrival,
+        .on_write_ready = writeOnReadyManager,
+    },{
         .state = MANAGER_DONE,
-        .on_arrival = doneOnArrival,
-        .on_read_ready = readOnReadyManager,
     },
+
     {
         .state = MANAGER_ERROR
     }
@@ -193,13 +196,15 @@ unsigned writeOnReadyManager(struct selector_key * key) {
     case MANAGER_TRANSACTION:
       next = MANAGER_TRANSACTION;
       break;
+    case MANAGER_QUIT:
+      next = MANAGER_DONE;
     }
+    printf("Estado actual: %d, próximo estado: %d\n", stm_state(&data->manager_data.stateMachine), next);
 
     if (!buffer_can_read(&data->manager_data.readBuffer)) {
       selector_set_interest_key(key, OP_READ);
       return next;
     }
-
     printf("queda algo en el buffer y salto a %d", next);
     jump(&data->manager_data.stateMachine, next, key);
     selector_set_interest_key(key, OP_READ);

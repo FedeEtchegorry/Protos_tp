@@ -39,12 +39,10 @@ static const struct state_definition stateHandlers[] = {
     {
         .state = UPDATE,
         .on_arrival = updateOnArrival,
-        .on_write_ready = writeOnReadyPop3,
+        .on_write_ready=writeOnReadyPop3,
     },
     {
         .state = DONE,
-        .on_arrival = doneOnArrival,
-        .on_write_ready=writeOnReadyPop3,
     },
     {
         .state = ERROR
