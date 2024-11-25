@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include "./client/pop3Server.h"
 #include "./manager/managerServer.h"
+#include "logging/metrics.h"
+
+extern server_metrics *clientMetrics;
 
 #define MAX_AUX_BUFFER_SIZE 255
 
@@ -28,7 +31,7 @@ void updateOnArrival(const unsigned int state, struct selector_key *key) {
   }
   else writeInBuffer(key, true, false, LOG_OUT, sizeof(LOG_OUT)-1);
 
-
+  serverMetricsRecordDropConection(clientMetrics);
   selector_set_interest_key(key, OP_WRITE);
 }
 
