@@ -179,6 +179,8 @@ void handlePipeRead(struct selector_key* key) {
     clientData* clientData = processData->key->data;
     size_t availableSize;
     buffer_write_ptr(&clientData->data.writeBuffer, &availableSize);
+    // Because partialWriteInBuffer changes \n to \r\n and . to ..
+    availableSize /= 2;
     if (availableSize > MAX_SIZE_TRANSFORMATION_BUFFER)
         availableSize = MAX_SIZE_TRANSFORMATION_BUFFER;
     char buffer[MAX_SIZE_TRANSFORMATION_BUFFER];
