@@ -6,7 +6,7 @@
 
 bool serverBlocked = false;
 bool transformationEnabled = false;
-char transformationCommand[MAX_SIZE_TRANSFORMATION_CMD];
+char transformationCommand[MAX_SIZE_TRANSFORMATION_CMD] = {0};
 
 void setServerBlocked(bool block) {
     serverBlocked = block;
@@ -16,8 +16,13 @@ bool isServerBlocked() {
 }
 
 
-void setTransformationEnabled(bool enabled) {
+bool setTransformationEnabled(bool enabled) {
+  	if(enabled == true && transformationCommand[0] == '\0'){
+         setTransformationEnabled(false);
+    	return false;
+    }
     transformationEnabled = enabled;
+    return true;
 }
 
 bool isTransformationEnabled() {

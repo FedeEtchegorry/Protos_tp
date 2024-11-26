@@ -453,7 +453,10 @@ static void handlerEnableTransformation(struct selector_key* key)
 
     if(num == 1)
     {
-        setTransformationEnabled(true);
+        if(!setTransformationEnabled(true))
+        {
+            writeInBuffer(key, true, true, ERROR_SET_TRANSF_FIRST, sizeof(ERROR_SET_TRANSF_FIRST) - 1);
+        }
     }
     else
     {

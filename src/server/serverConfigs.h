@@ -47,6 +47,7 @@
 #define INVALID_ARGUMENT                 "Invalid argument"
 #define MISSING_ARGUMENT                 "Missing argument"
 #define INVALID_TRANSFORMATION_ARGUMENT  "Invalid argument. Value must be 0 to disable transformations or 1 to enable them"
+#define ERROR_SET_TRANSF_FIRST           "Cannot enable transformations without setting a command first. Try using 'SETTR <command>' first"
 
 // --------------------------------- MANAGER ---------------------------------------------------------------------------
 
@@ -67,7 +68,7 @@ typedef struct {
 
 } server_configuration;
 
-void setTransformationEnabled(bool enabled);
+bool setTransformationEnabled(bool enabled);
 void setTransformationCommand(const char* command);
 char * getTransformationCommand();
 bool isTransformationEnabled();
