@@ -39,9 +39,15 @@ void updateOnArrival(const unsigned int state, struct selector_key *key) {
 }
 
 void exitOnArrival(const unsigned int state, struct selector_key *key){
-  writeInBuffer(key, true, false, LOG_OUT, sizeof(LOG_OUT)-1);
+  writeInBuffer(key, true, false, EXIT_MESSAGE, sizeof(EXIT_MESSAGE)-1);
   clientData * data = ATTACHMENT(key);
   snprintf(infoToLog, sizeof(infoToLog), "User '%s' has exit", data->data.currentUsername);
   serverLoggerRegister(logger, infoToLog);
   selector_set_interest_key(key, OP_WRITE);
+}
+
+void errorOnArrival(const unsigned int state, struct selector_key *key) {
+  clientData * data = ATTACHMENT(key);
+  snprintf(infoToLog, sizeof(infoToLog), "User '%s' has an unexpected error", data->data.currentUsername);
+  serverLoggerRegister(logger, infoToLog);
 }

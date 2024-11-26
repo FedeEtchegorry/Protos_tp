@@ -12,7 +12,7 @@
 typedef struct pop3Config {
     const char *    maildir;
     bool            transformation_enabled;
-    struct users    users[MAX_USERS];
+    struct users * users;
     unsigned nusers;
 } pop3Config;
 

@@ -53,7 +53,8 @@ static const struct state_definition stateHandlers[] = {
         .state = DONE,
     },
     {
-        .state = ERROR
+        .state = ERROR,
+        .on_arrival = errorOnArrival
     }
 };
 
@@ -124,7 +125,7 @@ static void pop3_done(struct selector_key* key) {
     free(data->writeBuffer.data);
     free(data);
 }
-void pop3_read(struct selector_key*key){
+void pop3_read(struct selector_key* key){
     struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
     const enum states_from_stm st = stm_handler_read(stm, key);
 
@@ -213,7 +214,6 @@ unsigned readOnReadyPop3(struct selector_key * key) {
     userData * data = ATTACHMENT_USER(key);
     bool isFinished = readAndParse(key);
     if (isFinished) {
-        printf("Entrando a read finished\n");
         unsigned next = UNKNOWN;
         switch (stm_state(&data->stateMachine)) {
         case AUTHORIZATION:
@@ -253,6 +253,9 @@ unsigned writeOnReadyPop3(struct selector_key * key) {
           break;
         case EXIT:
           next = DONE;
+            break;
+        default:
+            return ERROR;
         }
 
         if (!buffer_can_read(&data->readBuffer)) {

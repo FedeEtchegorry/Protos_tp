@@ -42,10 +42,13 @@ int main(const int argc, char** argv) {
     signal(SIGINT, sigterm_handler);
 
     //------------------------- Parsear argumentos ---------------------------------------------------------------------
-
+    // Defined here to be used in finally
     struct pop3Args args;
     selector_status selectorStatus = SELECTOR_SUCCESS;
-    char* errMsg = "?";   // Defined here to be used in finally
+    char* errMsg = "?";
+    int clientServer = -1;
+    int managerServer = -1;
+    //-------------------------------------
 
     parse_args(argc, argv, &args);
 
