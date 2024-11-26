@@ -29,7 +29,7 @@ server_metrics *serverMetricsCreate(char *dataFilePath, const size_t *ioReadBuff
     if (fileAlreadyExists) {
 
         char line[64] = {0};
-        size_t fileSize = 0;
+        long fileSize = 0;
         long position = 0;
 
         file = fopen(dataFilePath, "r+");
@@ -42,7 +42,9 @@ server_metrics *serverMetricsCreate(char *dataFilePath, const size_t *ioReadBuff
             fseek(file, position, SEEK_SET);
 
             if (position == 0 || (fgetc(file) == '\n' && position != fileSize - 1)) {
-                fgets(line, sizeof(line), file);
+                if (fgets(line, sizeof(line), file) == NULL) {
+                    position = 0;
+                }
                 break;
             }
             position--;

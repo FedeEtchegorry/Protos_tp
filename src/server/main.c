@@ -9,9 +9,7 @@
 
 #include "args.h"
 #include "serverConfigs.h"
-//#include "./core/transaction.h"
 #include "./core/selector.h"
-#include "./core/users.h"
 #include "./client/pop3Server.h"
 #include "./manager/managerServer.h"
 #include "./logging/metrics.h"
@@ -30,6 +28,9 @@ static void sigterm_handler(const int signal) {
 }
 
 int main(const int argc, char** argv) {
+
+    int clientServer = -1;
+    int managerServer = -1;
 
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
@@ -51,13 +52,13 @@ int main(const int argc, char** argv) {
     if (args.maildir == NULL) {
         errMsg = "No maildir specified";
         goto finally;
-    }
+    }/*
     const struct pop3Config pop3Config = {
         .maildir = args.maildir,
         .nusers = args.nusers,
         .users = args.users,
     };
-    initPOP3Config(pop3Config);
+    initPOP3Config(pop3Config);*/
 
     if(args.transformation_enabled) {
         setTransformationCommand(args.transformation_command);
@@ -69,7 +70,6 @@ int main(const int argc, char** argv) {
 
     //------------------------- CLIENT: Defino estructura para el socket para soportar IPv6 ----------------------------
     struct sockaddr_in6 addr = {0};
-    int clientServer = -1;
 
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htons(args.socks_port);
@@ -82,7 +82,6 @@ int main(const int argc, char** argv) {
     //-------------------------- MANAGER: Defino estructura para el socket para soportar IPv6  -------------------------
 
     struct sockaddr_in6 managerAddr = {0};
-    int managerServer = -1;
 
     managerAddr.sin6_family = AF_INET6;
     managerAddr.sin6_port = htons(args.mng_port);
