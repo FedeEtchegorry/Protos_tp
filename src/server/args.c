@@ -83,6 +83,7 @@ parse_args(const int argc, char** argv, struct pop3Args* args) {
     args->mng_port = 8080;
 
     args->maildir = NULL;
+    args->transformation_command = NULL;
     args->transformation_enabled = true;
     args->nusers=0;
     //------------------------Parsear argumentos---------------------------------
