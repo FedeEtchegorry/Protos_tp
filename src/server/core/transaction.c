@@ -149,27 +149,26 @@ static void transform(struct selector_key* key, const char * src){
     int pipefd[2];
 
     if (pipe(pipefd) < 0) {
-        perror("Error al crear el pipe");
+        fprintf(stderr, "Error creating pipe\n");
     }
 
     int pid = fork();
     if(pid < 0)
     {
-        perror("Error al crear el pipe");
+        fprintf(stderr, "Error creating child\n");
     }
 
     if (pid == 0) {
-        close(1); // cierra stdout
-        int dupResult = dup(pipefd[1]); // duplica extremo de escritura en pipe en el de stdout
-        close(pipefd[0]);   // cierra extremo de lectura en pipe
+        close(1);
+        int dupResult = dup(pipefd[1]);
+        close(pipefd[0]);
         if (dupResult >= 0) {
             char fullCommand[256];
             snprintf(fullCommand, sizeof(fullCommand), "/bin/%s", getTransformationCommand());
             char* args[] = {fullCommand, (char*)src, NULL};
             execve(fullCommand, args, NULL);
         }
-    perror("Error al ejecutar el comando de transformación");
-    exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     }
 
     close(pipefd[1]);
@@ -178,20 +177,17 @@ static void transform(struct selector_key* key, const char * src){
     ssize_t bytesRead;
 
     while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer) - 1)) > 0) {
-        buffer[bytesRead] = '\0';  // Asegurar que el buffer es un string válido
-
-        // Pasar el contenido leído al buffer de destino
+        buffer[bytesRead] = '\0';
         writeInBuffer(key, false, false, buffer, bytesRead);
     }
     if (bytesRead < 0) {
-        perror("Error al leer desde el pipe");
+        fprintf(stderr, "Error reading from pipe\n");
     }
 
-    close(pipefd[0]);  // Cerrar el extremo de lectura del pipe
+    close(pipefd[0]);
 
-    // Esperar al proceso hijo para evitar procesos "zombie"
     if (waitpid(pid, NULL, 0) < 0) {
-        perror("Error al esperar al proceso hijo");
+        fprintf(stderr, "Error waiting for child to end\n");
     }
 }
 
