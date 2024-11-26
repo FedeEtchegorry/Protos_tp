@@ -1,9 +1,11 @@
 #include "logger.h"
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 
 #define LOGGER_BUFFER_SIZE        8096
 #define FILE_PERMISSIONS 		 (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
@@ -111,8 +113,21 @@ void serverLoggerRegister(server_logger *serverLogger, char *stringData) {
     if (serverLogger == NULL) {
         return;
     }
+    time_t times = time(NULL);
+    struct tm localTime = *localtime(&times);
+
     size_t maxBytes = serverLogger->buffer.limit - serverLogger->buffer.write;
-    size_t toBeWritten = snprintf((char*)serverLogger->buffer.write, maxBytes, "[OUTPUT] %s", stringData);
+    size_t toBeWritten = snprintf(	(char*)serverLogger->buffer.write,
+                                  	maxBytes,
+                                  	"[INFO] %02d/%02d/%02d %02d:%02d:%02d | %s",
+                                  	localTime.tm_year + 1900,
+                                  	localTime.tm_mon + 1,
+                                  	localTime.tm_mday,	// Raro que dia no necesite un +1
+                                  	localTime.tm_hour,
+                                  	localTime.tm_min,
+                                  	localTime.tm_min,
+                                  	stringData
+                                  );
 
     if (toBeWritten && serverLogger->buffer.write[toBeWritten-1] != '\n') {
       	if (toBeWritten < maxBytes) {
