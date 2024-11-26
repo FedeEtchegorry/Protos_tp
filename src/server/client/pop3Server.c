@@ -214,7 +214,6 @@ unsigned readOnReadyPop3(struct selector_key * key) {
     userData * data = ATTACHMENT_USER(key);
     bool isFinished = readAndParse(key);
     if (isFinished) {
-        printf("Entrando a read finished\n");
         unsigned next = UNKNOWN;
         switch (stm_state(&data->stateMachine)) {
         case AUTHORIZATION:
