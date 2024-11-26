@@ -6,18 +6,18 @@
 enum manager_methods {
   USER_M,
   PASS_M,
-  ADDUSER,
-  DELUSER,
-  BLOCK,
-  UNBLOCK,
-  SUDO,
-  RST,
-  SHOW,
   DATA,
   CAPA_M,
+  QUIT_M,
+  ADDUSER,
+  SUDO,
+  BLOCK,
+  UNBLOCK,
+  RST,
   LOGG,
   ENLOG,
-  QUIT_M,
+  SETTR,
+  ENTR,
   UNKNOWN_M
 };
 

@@ -17,6 +17,8 @@
 #include "../logging/metrics.h"
 #include "../logging/logger.h"
 #include <sys/wait.h>
+#include "../serverConfigs.h"
+
 
 extern server_metrics *clientMetrics;
 extern server_logger *logger;
@@ -432,6 +434,50 @@ static void handlerEnableLog(struct selector_key* key) {
     writeInBuffer(key, true, false, buffer, bytesWritten);
 }
 
+static void handlerEnableTransformation(struct selector_key* key)
+{
+    clientData* data = ATTACHMENT(key);
+    char * arg = parserGetFirstArg(data->data.parser);
+
+    if (arg == NULL) {
+        writeInBuffer(key, true, true, INVALID_TRANSFORMATION_ARGUMENT, sizeof(INVALID_TRANSFORMATION_ARGUMENT) - 1);
+        return;
+    }
+
+    size_t num = strtol(arg, NULL, 10);
+    if(num != 0 && num != 1)
+    {
+        writeInBuffer(key, true, true, INVALID_TRANSFORMATION_ARGUMENT, sizeof(INVALID_TRANSFORMATION_ARGUMENT) - 1);
+        return;
+    }
+
+    if(num == 1)
+    {
+        setTransformationEnabled(true);
+    }
+    else
+    {
+        setTransformationEnabled(false);
+    }
+    writeInBuffer(key, true, false, NULL, 0);
+}
+
+static void handleSetTransformation(struct selector_key* key)
+{
+    clientData* data = ATTACHMENT(key);
+    char * arg = parserGetFirstArg(data->data.parser);
+
+    if(arg == NULL)
+    {
+        writeInBuffer(key, true, true, MISSING_ARGUMENT, sizeof(MISSING_ARGUMENT) - 1);
+        return;
+    }
+    setTransformationCommand(arg);
+    writeInBuffer(key, true, false, NULL, 0);
+}
+
+
+
 //--------------------------------------- Aux functions ----------------------------------------------------------------
 
 static size_t calculateOctetLength(const char* filePath) {
@@ -586,6 +632,12 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
         break;
     case ENLOG:
         handlerEnableLog(key);
+        break;
+    case SETTR:
+        handleSetTransformation(key);
+        break;
+    case ENTR:
+        handlerEnableTransformation(key);
         break;
     case QUIT_M:
         return MANAGER_EXIT;

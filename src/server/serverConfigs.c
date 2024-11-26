@@ -6,7 +6,7 @@
 
 bool serverBlocked = false;
 bool transformationEnabled = false;
-char * transformationCommand = NULL;
+char transformationCommand[MAX_SIZE_TRANSFORMATION_CMD];
 
 void setServerBlocked(bool block) {
     serverBlocked = block;
@@ -25,11 +25,11 @@ bool isTransformationEnabled() {
 }
 
 void setTransformationCommand(const char* command){
-  	if(command == NULL || strlen(command) > MAX_SIZE_TRANSFORMATION_CMD || command[0] == '\0'){
+  	if(command == NULL || strlen(command) > MAX_SIZE_TRANSFORMATION_CMD || command[0] == '\0' || strlen(command) > MAX_SIZE_TRANSFORMATION_CMD - 1){
          setTransformationEnabled(false);
     	return;
     }
-    transformationCommand = malloc(strlen(command) + 1);
+
     strcpy(transformationCommand, command);
     setTransformationEnabled(true);
 }
