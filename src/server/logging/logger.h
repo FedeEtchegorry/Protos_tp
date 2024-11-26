@@ -20,8 +20,8 @@ server_logger *serverLoggerCreate(fd_selector *selector, char *loggerFilePath);
 
 void serverLoggerTerminate(server_logger **serverLogger);
 
-void serverLoggerRegister(server_logger *serverLogger);
+void serverLoggerRegister(server_logger *serverLogger, char *stringData);
 
-size_t serverLoggerRetrive(server_logger *serverLogger, char *string, size_t lines);
+unsigned long serverLoggerRetrieve(server_logger *serverLogger, char *string, unsigned long maxBytes, unsigned long lines);
 
 #endif // LOGGER_H
