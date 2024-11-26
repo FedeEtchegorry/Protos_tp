@@ -35,7 +35,16 @@ static int checkNoiseArguments(struct selector_key* key){
   }
   return 0;
 }
-
+static void handleCapa(struct selector_key* key){
+  char method[MAX_AUX_BUFFER_SIZE];
+  snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "Capability list follows");
+  writeInBuffer(key, true, false, method, strlen(method));
+  snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "UIDL");
+  writeInBuffer(key, false, false, method, strlen(method));
+  snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "PIPELINING");
+  writeInBuffer(key, false, false, method, strlen(method));
+  writeInBuffer(key, false, false, ".", strlen("."));
+}
 
 static long int checkEmailNumber(struct selector_key* key, long int * result) {
     clientData* data = ATTACHMENT(key);
@@ -433,6 +442,8 @@ unsigned transactionOnReadReady(struct selector_key* key) {
         break;
     case QUIT:
         return UPDATE;
+    case CAPA:
+        handleCapa(key);
         break;
     case UIDL:
         handleUIDL(key);
