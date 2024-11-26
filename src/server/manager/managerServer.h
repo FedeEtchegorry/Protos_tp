@@ -18,6 +18,8 @@
 #define GREETING_MANAGER "Manager server ready"
 #define INVALID_COMMAND "Unknown command"
 #define LOG_OUT "Logging out"
+#define EXIT_MESSAGE "Connection closed"
+#define UNEXPECTED_ERROR "Unexpected error"
 #define AUTH_FAILED "Authentication failed"
 #define AUTH_SUCCESS "Logged in successfully"
 #define NO_USERNAME "No username given"
@@ -44,5 +46,4 @@ enum states_from_stm_manager {
 void manager_passive_accept(struct selector_key* key);
 unsigned writeOnReadyManager(struct selector_key * key);
 unsigned readOnReadyManager(struct selector_key * key);
-
 #endif // PROTOS_TP_MANAGERSERVER_H

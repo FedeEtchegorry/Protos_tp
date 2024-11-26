@@ -41,9 +41,9 @@ server_metrics *serverMetricsCreate(char *dataFilePath, const size_t *ioReadBuff
 
             fseek(file, position, SEEK_SET);
 
-            if (position == 0 || (fgetc(file) == '\n' && position != fileSize - 1)) {
-                fgets(line, sizeof(line), file);
-                break;
+            if (position == 0 || (fgetc(file) == '\n' && position != (long)fileSize - 1)) {
+                if (fgets(line, sizeof(line), file)!=NULL)
+                    break;
             }
             position--;
         }

@@ -41,10 +41,13 @@ int main(const int argc, char** argv) {
     signal(SIGINT, sigterm_handler);
 
     //------------------------- Parsear argumentos ---------------------------------------------------------------------
-
+    // Defined here to be used in finally
     struct pop3Args args;
     selector_status selectorStatus = SELECTOR_SUCCESS;
-    char* errMsg = "?";   // Defined here to be used in finally
+    char* errMsg = "?";
+    int clientServer = -1;
+    int managerServer = -1;
+    //-------------------------------------
 
     parse_args(argc, argv, &args);
 
@@ -69,7 +72,6 @@ int main(const int argc, char** argv) {
 
     //------------------------- CLIENT: Defino estructura para el socket para soportar IPv6 ----------------------------
     struct sockaddr_in6 addr = {0};
-    int clientServer = -1;
 
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htons(args.socks_port);
@@ -82,7 +84,6 @@ int main(const int argc, char** argv) {
     //-------------------------- MANAGER: Defino estructura para el socket para soportar IPv6  -------------------------
 
     struct sockaddr_in6 managerAddr = {0};
-    int managerServer = -1;
 
     managerAddr.sin6_family = AF_INET6;
     managerAddr.sin6_port = htons(args.mng_port);

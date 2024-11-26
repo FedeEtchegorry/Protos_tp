@@ -153,10 +153,9 @@ unsigned long serverLoggerRetrieve(server_logger *serverLogger, char *stringData
 
     char buffer[1024];
     ssize_t bytesRead = 0;
-    char *lineStart = buffer;
     long index = 0;
-    long totalLines = 0;
-    long totalBytes = 0;
+    unsigned long totalLines = 0;
+    unsigned long totalBytes = 0;
     long offset = lseek(fd, 0, SEEK_END);
 
     if (*lines == 0) {
@@ -167,7 +166,7 @@ unsigned long serverLoggerRetrieve(server_logger *serverLogger, char *stringData
 		// Leer de atrás para adelante el archivo
         size_t chunkSize = sizeof(buffer);
 
-        if (offset < chunkSize) {
+        if ((size_t)offset < chunkSize) {
             chunkSize = offset;
         }
         offset = lseek(fd, -chunkSize, SEEK_CUR);
@@ -191,7 +190,7 @@ unsigned long serverLoggerRetrieve(server_logger *serverLogger, char *stringData
 
     close(fd);
     // Invertir la información que está inversa xd
-    for (index = 0; index < totalBytes / 2; index++) {
+    for (index = 0; index < (long) totalBytes / 2; index++) {
         char temp = stringData[index];
         stringData[index] = stringData[totalBytes - index - 1];
         stringData[totalBytes - index - 1] = temp;
