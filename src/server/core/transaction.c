@@ -28,6 +28,8 @@ extern server_logger* logger;
 
 #define MAX_AUX_BUFFER_SIZE    255
 #define MAX_DIRENT_SIZE        512
+#define MAX_SIZE_TRANSFORMATION_BUFFER        1024
+
 
 void handlePipeRead(struct selector_key* key);
 
