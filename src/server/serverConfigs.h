@@ -16,6 +16,7 @@
 
 #define MAX_USERS                        10
 #define MAX_MAILS                        50
+#define MAX_SIZE_TRANSFORMATION_CMD      50
 #define USERS_CSV                        "users.csv"
 #define USERS_MAX_USERNAME_LENGTH        254
 #define USERS_MAX_PASSWORD_LENGTH        254
@@ -61,6 +62,9 @@ typedef struct {
 
 } server_configuration;
 
+void setTransformationCommand(const char* command);
+char * getTransformationCommand();
+bool isTransformationEnabled();
 void setServerBlocked(bool block);
 bool isServerBlocked();
 #endif // SERVER_CONFIGS_H

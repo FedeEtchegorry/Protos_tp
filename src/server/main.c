@@ -48,6 +48,10 @@ int main(const int argc, char** argv) {
 
     parse_args(argc, argv, &args);
 
+    if(args.transformation_enabled) {
+        setTransformationCommand(args.transformation_command);
+    }
+
     clientServerConfig.ioReadBufferSize = DEFAULT_IO_BUFFER_SIZE;
     clientServerConfig.ioWriteBufferSize = DEFAULT_IO_BUFFER_SIZE;
     clientMetrics = serverMetricsCreate(HISTORIC_DATA_FILE, &clientServerConfig.ioReadBufferSize, &clientServerConfig.ioWriteBufferSize);
