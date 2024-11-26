@@ -21,6 +21,7 @@ struct pop3Args {
 
     const char *    maildir;
 
+    char * transformation_command;
     bool            transformation_enabled;
 
     struct users    users[MAX_USERS];
