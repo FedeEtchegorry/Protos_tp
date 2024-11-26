@@ -7,8 +7,6 @@
 #include "./core/stm.h"
 #include "./core/buffer.h"
 
-#define SUCCESS_MSG           "+OK "
-#define ERROR_MSG             "-ERR "
 #define ATTACHMENT_USER(key)  ((userData *)(key->data))
 
 typedef struct userData {
@@ -25,7 +23,7 @@ typedef struct userData {
   bool isEmailFinished;
 } userData;
 
-
+void partialWriteInBuffer(struct selector_key* key, char* msg, long len);
 void writeInBuffer(struct selector_key* key, bool hasStatusCode, bool isError, char* msg, long len);
 bool sendFromBuffer(struct selector_key* key);
 bool readAndParse(struct selector_key* key);

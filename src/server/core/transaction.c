@@ -182,7 +182,7 @@ void handlePipeRead(struct selector_key* key) {
     char buffer[MAX_SIZE_TRANSFORMATION_BUFFER];
     ssize_t bytesRead = read(processData->pipefd, buffer, availableSize);
     if (bytesRead > 0) {
-        writeInBuffer(processData->key, false, false, buffer, bytesRead);
+        partialWriteInBuffer(processData->key, buffer, bytesRead);
         selector_set_interest_key(processData->key, OP_WRITE);
     }
     else if (bytesRead == 0) {
