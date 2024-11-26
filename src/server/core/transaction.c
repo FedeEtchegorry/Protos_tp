@@ -16,6 +16,7 @@
 #include "../manager/managerParser.h"
 #include "../logging/metrics.h"
 #include "../logging/logger.h"
+#include <sys/wait.h>
 
 extern server_metrics *clientMetrics;
 extern server_logger *logger;
@@ -143,6 +144,56 @@ static void handleList(struct selector_key* key) {
     }
 }
 
+static void transform(struct selector_key* key, const char * src){
+    int pipefd[2];
+
+    if (pipe(pipefd) < 0) {
+        perror("Error al crear el pipe");
+    }
+
+    int pid = fork();
+    if(pid < 0)
+    {
+        perror("Error al crear el pipe");
+    }
+
+    if (pid == 0){
+        close(1); // cierra stdout
+        dup(pipefd[1]); // duplica extremo de escritura en pipe en el de stdout
+        close(pipefd[0]);   // cierra extremo de lectura en pipe
+
+        char fullCommand[256];
+        snprintf(fullCommand, sizeof(fullCommand), "/bin/%s", getTransformationCommand());
+        char* args[] = {fullCommand, (char*)src, NULL};
+        execve(fullCommand, args, NULL);
+
+        perror("Error al ejecutar el comando de transformación");
+        exit(EXIT_FAILURE);
+    }
+
+    close(pipefd[1]);
+
+    char buffer[150];
+    ssize_t bytesRead;
+
+    while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer) - 1)) > 0) {
+        buffer[bytesRead] = '\0';  // Asegurar que el buffer es un string válido
+
+        // Pasar el contenido leído al buffer de destino
+        writeInBuffer(key, false, false, buffer, bytesRead);
+    }
+    if (bytesRead < 0) {
+        perror("Error al leer desde el pipe");
+    }
+
+    close(pipefd[0]);  // Cerrar el extremo de lectura del pipe
+
+    // Esperar al proceso hijo para evitar procesos "zombie"
+    if (waitpid(pid, NULL, 0) < 0) {
+        perror("Error al esperar al proceso hijo");
+    }
+}
+
 static void handleRetr(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
     char auxBuffer[MAX_AUX_BUFFER_SIZE];
@@ -156,17 +207,22 @@ static void handleRetr(struct selector_key* key) {
 
         snprintf(auxBuffer, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, data->data.currentUsername,
                  data->mails[msgNumber - 1]->seen ? "cur" : "new", data->mails[msgNumber - 1]->filename);
-        FILE* mail = fopen(auxBuffer, "r");
 
-
-        while (fgets(auxBuffer, MAX_AUX_BUFFER_SIZE, mail) != NULL) {
-            auxBuffer[strlen(auxBuffer) - 1] = '\0';
-            writeInBuffer(key, false, false, auxBuffer, strlen(auxBuffer));
+        if(isTransformationEnabled()){
+            transform(key, auxBuffer);
+        }
+        else
+        {
+            FILE* mail = fopen(auxBuffer, "r");
+            while (fgets(auxBuffer, MAX_AUX_BUFFER_SIZE, mail) != NULL)
+            {
+                auxBuffer[strlen(auxBuffer) - 1] = '\0';
+                writeInBuffer(key, false, false, auxBuffer, strlen(auxBuffer));
+            }
+            fclose(mail);
         }
 
         writeInBuffer(key, false, false, ".", 1);
-
-        fclose(mail);
 
         if (data->mails[msgNumber - 1]->seen == false) {
             data->mails[msgNumber - 1]->seen = true;
