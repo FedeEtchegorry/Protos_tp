@@ -56,12 +56,9 @@ int main(const int argc, char** argv) {
         .maildir = args.maildir,
         .nusers = args.nusers,
         .users = args.users,
+        .transformation_command = args.transformation_command,
     };
     initPOP3Config(pop3Config);
-
-    if(args.transformation_enabled) {
-        setTransformationCommand(args.transformation_command);
-    }
 
     clientServerConfig.ioReadBufferSize = DEFAULT_IO_BUFFER_SIZE;
     clientServerConfig.ioWriteBufferSize = DEFAULT_IO_BUFFER_SIZE;

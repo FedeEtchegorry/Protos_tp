@@ -200,6 +200,7 @@ fail:
 void initPOP3Config(struct pop3Config config) {
     mkdir(config.maildir, 0755);
     mailDirectory = strdup(config.maildir);
+    setTransformationCommand(config.transformation_command);
 
     for (unsigned int i = 0; i < config.nusers; i++) {
         addUser(config.users[i].name, config.users[i].pass, config.users[i].role);

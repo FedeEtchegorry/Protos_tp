@@ -11,7 +11,7 @@
 
 typedef struct pop3Config {
     const char* maildir;
-    bool transformation_enabled;
+    char * transformation_command;
     struct users* users;
     unsigned nusers;
 } pop3Config;

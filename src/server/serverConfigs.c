@@ -31,14 +31,19 @@ bool isTransformationEnabled() {
 }
 
 void setTransformationCommand(const char* command){
-  	if(command == NULL || strlen(command) > MAX_SIZE_TRANSFORMATION_CMD || command[0] == '\0' || strlen(command) > MAX_SIZE_TRANSFORMATION_CMD - 1){
-         setTransformationEnabled(false);
-    	return;
-    }
+    if (command == NULL)
+        command = "cat";
 
-    strcpy(transformationCommand, command);
+    if (strlen(command) > MAX_SIZE_TRANSFORMATION_CMD)
+        return;
+
+
+    strncpy(transformationCommand, command, MAX_SIZE_TRANSFORMATION_CMD - 1);
+    transformationCommand[MAX_SIZE_TRANSFORMATION_CMD - 1] = '\0';  // Null-terminate
+
     setTransformationEnabled(true);
 }
+
 
 char * getTransformationCommand(){
   return transformationCommand;
