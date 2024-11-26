@@ -319,13 +319,17 @@ static void handlerGetLog(struct selector_key* key) {
 	clientData* data = ATTACHMENT(key);
     char buffer[1024];
     unsigned long lines = 0;
-	unsigned long  bytesWritten = 0;
+	unsigned long bytesWritten = 0;
 
     if (logger == NULL) {
         snprintf(buffer, sizeof(buffer), "Logs are disabled\n");
     }
     else {
         buffer[0] = '\n';
+
+        if (data->data.parser.arg) {
+        	lines = strtol(data->data.parser.arg, NULL, 10);
+        }
     	bytesWritten = serverLoggerRetrieve(logger, buffer+1, sizeof(buffer)-1, &lines) + 1; // Ahora duro, se deberia pasar por parametro
     }
     writeInBuffer(key, true, false, buffer, bytesWritten);
