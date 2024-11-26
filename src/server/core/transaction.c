@@ -44,6 +44,8 @@ static void handleCapa(struct selector_key* key) {
     char method[MAX_AUX_BUFFER_SIZE];
     snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "Capability list follows");
     writeInBuffer(key, true, false, method, strlen(method));
+    snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "CAPA");
+    writeInBuffer(key, true, false, method, strlen(method));
     snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "UIDL");
     writeInBuffer(key, false, false, method, strlen(method));
     snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "PIPELINING");
