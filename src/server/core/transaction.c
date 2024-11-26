@@ -614,7 +614,6 @@ void transactionOnArrival(const unsigned int state, struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
     createMaildir(data);
     loadMails(data);
-    printf("LA CANTIDAD DE MAILS ES %d", data->mailCount);
     selector_set_interest_key(key, OP_READ);
 }
 
