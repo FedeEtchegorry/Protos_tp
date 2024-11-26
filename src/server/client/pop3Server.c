@@ -43,6 +43,10 @@ static const struct state_definition stateHandlers[] = {
         .on_write_ready = writeOnReadyPop3,
     },
     {
+        .state = TRANSFORMATION,
+        .on_write_ready = writeOnReadyPop3,
+    },
+    {
         .state = UPDATE,
         .on_arrival = updateOnArrival,
         .on_write_ready=writeOnReadyPop3,
@@ -228,7 +232,7 @@ unsigned writeOnReadyPop3(struct selector_key * key) {
     userData * data = ATTACHMENT_USER(key);
     bool isFinished = sendFromBuffer(key);
     if (isFinished) {
-        unsigned next = UNKNOWN;
+        unsigned next;
         switch (stm_state(&data->stateMachine)) {
         case GREETINGS:
           next = AUTHORIZATION;
@@ -242,7 +246,16 @@ unsigned writeOnReadyPop3(struct selector_key * key) {
         case TRANSACTION:
           next = TRANSACTION;
           break;
-        case UPDATE | EXIT:
+        case TRANSFORMATION:
+            if (!data->isEmailFinished) {
+                //wait to transformator process to tell me when there is something to read in buffer
+                selector_set_interest_key(key, OP_NOOP);
+                return TRANSFORMATION;
+            }
+            next = TRANSACTION;
+            break;
+        case UPDATE:
+        case EXIT:
           next = DONE;
           break;
         default:
@@ -253,7 +266,6 @@ unsigned writeOnReadyPop3(struct selector_key * key) {
           selector_set_interest_key(key, OP_READ);
           return next;
         }
-        printf("queda algo en el buffer y salto a %d", next);
         jump(&data->stateMachine, next, key);
         selector_set_interest_key(key, OP_READ);
         readOnReadyPop3(key);

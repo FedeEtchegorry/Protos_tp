@@ -195,7 +195,6 @@ int main(const int argc, char** argv) {
     }
 
     //----------------------------- MANAGER: Registro a mi socket pasivo para que acepte conexiones --------------------
-
     const fd_handler managerPassiveSocket = {
         .handle_read = manager_passive_accept,
         .handle_write = NULL,
