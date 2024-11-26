@@ -22,7 +22,7 @@ typedef struct userData {
   char * currentUsername;
   bool isAuth;
   bool closed;
-
+  bool isEmailFinished;
 } userData;
 
 

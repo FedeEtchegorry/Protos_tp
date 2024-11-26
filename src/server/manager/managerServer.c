@@ -198,7 +198,6 @@ unsigned writeOnReadyManager(struct selector_key * key) {
     case MANAGER_EXIT:
       next = MANAGER_DONE;
     }
-    printf("Estado actual: %d, próximo estado: %d\n", stm_state(&data->manager_data.stateMachine), next);
 
     if (!buffer_can_read(&data->manager_data.readBuffer)) {
       selector_set_interest_key(key, OP_READ);
