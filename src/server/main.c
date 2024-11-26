@@ -15,11 +15,13 @@
 #include "./client/pop3Server.h"
 #include "./manager/managerServer.h"
 #include "./logging/metrics.h"
+#include "./logging/logger.h"
 
 static bool done = false;
 
 server_configuration clientServerConfig = {0};
 server_metrics *clientMetrics = NULL;
+server_logger *logger = NULL;
 
 static void sigterm_handler(const int signal) {
 
@@ -58,7 +60,6 @@ int main(const int argc, char** argv) {
         errMsg = "No maildir specified";
         goto finally;
     }
-
 
     initMaildir(args.maildir);
 
@@ -172,6 +173,10 @@ int main(const int argc, char** argv) {
         goto finally;
     }
 
+    logger = serverLoggerCreate(&selector, LOG_DATA_FILE); // Ahora que tengo selector creo el logger
+    serverLoggerRegister(logger);
+    serverLoggerTerminate(&logger);
+
     //----------------------------- CLIENT: Registro a mi socket pasivo para que acepte conexiones ---------------------
 
     const fd_handler clientPassiveSocket = {
@@ -246,6 +251,7 @@ finally:
 
     serverMetricsRecordInFile(clientMetrics);
     serverMetricsFree(&clientMetrics);
+    serverLoggerTerminate(&logger);
 
     return ret;
 }
