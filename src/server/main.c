@@ -9,9 +9,7 @@
 
 #include "args.h"
 #include "serverConfigs.h"
-//#include "./core/transaction.h"
 #include "./core/selector.h"
-#include "./core/users.h"
 #include "./client/pop3Server.h"
 #include "./manager/managerServer.h"
 #include "./logging/metrics.h"
@@ -31,6 +29,9 @@ static void sigterm_handler(const int signal) {
 
 int main(const int argc, char** argv) {
 
+    int clientServer = -1;
+    int managerServer = -1;
+
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
     close(STDIN_FILENO);
@@ -45,8 +46,6 @@ int main(const int argc, char** argv) {
     struct pop3Args args;
     selector_status selectorStatus = SELECTOR_SUCCESS;
     char* errMsg = "?";
-    int clientServer = -1;
-    int managerServer = -1;
     //-------------------------------------
 
     parse_args(argc, argv, &args);
