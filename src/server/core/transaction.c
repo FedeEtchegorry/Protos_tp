@@ -330,8 +330,44 @@ static void handlerGetLog(struct selector_key* key) {
         if (data->data.parser.arg) {
         	lines = strtol(data->data.parser.arg, NULL, 10);
         }
-    	bytesWritten = serverLoggerRetrieve(logger, buffer+1, sizeof(buffer)-1, &lines) + 1; // Ahora duro, se deberia pasar por parametro
+    	bytesWritten = serverLoggerRetrieve(logger, buffer+1, sizeof(buffer)-1, &lines) + 1;
     }
+    writeInBuffer(key, true, false, buffer, bytesWritten);
+}
+
+static void handlerEnableLog(struct selector_key* key) {
+
+	clientData* data = ATTACHMENT(key);
+
+    char buffer[128];
+    unsigned long enable = 0;
+	unsigned long bytesWritten = 0;
+
+    if (data->data.parser.arg) {
+
+        enable = strtol(data->data.parser.arg, NULL, 10);
+
+        if (enable == 0 && logger == NULL) {
+          	bytesWritten = snprintf(buffer, sizeof(buffer), "Logs already disabled\n");
+        }
+        else if (enable == 0) {
+          	snprintf(buffer, sizeof(buffer), "Logs beeing disabled by '%s'", data->data.currentUsername);
+            serverLoggerRegister(logger, buffer);
+          	serverLoggerTerminate(&logger);
+          	bytesWritten = snprintf(buffer, sizeof(buffer), "Logs disabled\n");
+        }
+        else if (logger != NULL) {
+          	bytesWritten = snprintf(buffer, sizeof(buffer), "Logs already enabled\n");
+        }
+        else {
+
+        }
+    }
+    else {
+        strcpy(buffer, ERROR_MSG);
+        bytesWritten = sizeof(ERROR_MSG) - 1;
+    }
+
     writeInBuffer(key, true, false, buffer, bytesWritten);
 }
 
@@ -487,6 +523,9 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
         break;
     case LOGG:
         handlerGetLog(key);
+        break;
+    case ENLOG:
+        handlerEnableLog(key);
         break;
     case QUIT_M:
         return MANAGER_EXIT;
