@@ -178,8 +178,6 @@ int main(const int argc, char** argv) {
     }
 
     logger = serverLoggerCreate(&selector, LOG_DATA_FILE); // Ahora que tengo selector creo el logger
-    serverLoggerRegister(logger);
-    serverLoggerTerminate(&logger);
 
     //----------------------------- CLIENT: Registro a mi socket pasivo para que acepte conexiones ---------------------
 
