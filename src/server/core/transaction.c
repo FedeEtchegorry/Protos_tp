@@ -23,7 +23,7 @@ static int checkNoiseArguments(struct selector_key* key){
   clientData* data = ATTACHMENT(key);
   char message[MAX_AUX_BUFFER_SIZE];
   if (data->data.parser.arg2 != NULL) {
-    snprintf(message, MAX_AUX_BUFFER_SIZE, "%s %s", NOISE_ARGUMENTS, data->data.parser.arg2);
+    snprintf(message, MAX_AUX_BUFFER_SIZE, "%s: %s", NOISE_ARGUMENTS, data->data.parser.arg2);
     writeInBuffer(key, true, true, message, strlen(message));
     return 1;
   }
