@@ -17,8 +17,8 @@
 #include "../logging/metrics.h"
 #include "../logging/logger.h"
 
-extern server_metrics* clientMetrics;
-extern server_logger* logger;
+extern server_metrics *clientMetrics;
+extern server_logger *logger;
 
 //------------------------------------------------------ Private Functions ---------------------------------------------
 
@@ -311,18 +311,68 @@ static void handleData(struct selector_key* key) {
 }
 
 static void handlerGetLog(struct selector_key* key) {
+	clientData* data = ATTACHMENT(key);
     char buffer[1024];
     unsigned long lines = 0;
-    unsigned long bytesWritten = 0;
+	unsigned long bytesWritten = 0;
 
     if (logger == NULL) {
-        snprintf(buffer, sizeof(buffer), "Logs are disabled\n");
+        bytesWritten = snprintf(buffer, sizeof(buffer), "Logs are disabled\n");
     }
     else {
         buffer[0] = '\n';
-        bytesWritten = serverLoggerRetrieve(logger, buffer + 1, sizeof(buffer) - 1, &lines) + 1;
-        // Ahora duro, se deberia pasar por parametro
+
+        char * arg = parserGetFirstArg(data->data.parser);
+        if (arg) {
+        	lines = strtol(arg, NULL, 10);
+        }
+    	bytesWritten = serverLoggerRetrieve(logger, buffer+1, sizeof(buffer)-1, &lines) + 1;
     }
+    writeInBuffer(key, true, false, buffer, bytesWritten);
+}
+
+static void handlerEnableLog(struct selector_key* key) {
+
+	clientData* data = ATTACHMENT(key);
+
+    char buffer[128];
+    unsigned long enable = 0;
+	unsigned long bytesWritten = 0;
+
+    char * arg = parserGetFirstArg(data->data.parser);
+    if (arg) {
+
+        enable = strtol(arg, NULL, 10);
+
+        if (enable == 0 && logger == NULL) {
+          	bytesWritten = snprintf(buffer, sizeof(buffer), "Logs already disabled\n");
+        }
+        else if (enable == 0) {
+          	snprintf(buffer, sizeof(buffer), "Logs beeing disabled by '%s'", data->data.currentUsername);
+            serverLoggerRegister(logger, buffer);
+          	serverLoggerTerminate(&logger);
+          	bytesWritten = snprintf(buffer, sizeof(buffer), "Logs disabled\n");
+        }
+        else if (logger != NULL) {
+          	bytesWritten = snprintf(buffer, sizeof(buffer), "Logs already enabled\n");
+        }
+        else {
+			logger = serverLoggerCreate(&key->s, LOG_DATA_FILE);
+
+            if (logger != NULL) {
+            	snprintf(buffer, sizeof(buffer), "Logs enabled by '%s'\n", data->data.currentUsername);
+                serverLoggerRegister(logger, buffer);
+            }
+            else {
+                bytesWritten = snprintf(buffer, sizeof(buffer), "I was not enable, sorry\n");
+        	}
+        }
+    }
+    else {
+      	strcpy(buffer, MISSING_ARGUMENT);
+        bytesWritten = sizeof(MISSING_ARGUMENT) - 1;
+    }
+
     writeInBuffer(key, true, false, buffer, bytesWritten);
 }
 
@@ -477,6 +527,9 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
         break;
     case LOGG:
         handlerGetLog(key);
+        break;
+    case ENLOG:
+        handlerEnableLog(key);
         break;
     case QUIT_M:
         return MANAGER_EXIT;
