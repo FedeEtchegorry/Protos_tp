@@ -56,6 +56,10 @@ static long int checkEmailNumber(struct selector_key* key, long int* result) {
     errno = 0;
     char* endPtr;
     char * arg = parserGetFirstArg(data->data.parser);
+    if(arg == NULL) {
+        writeInBuffer(key, true, true, MISSING_ARGUMENT, sizeof(MISSING_ARGUMENT) - 1);
+        return 4;
+    }
     const long int msgNumber = strtol(arg, &endPtr, 10);
     if (endPtr == arg || *endPtr != '\0' || errno == ERANGE) {
         writeInBuffer(key, true, true, INVALID_NUMBER, sizeof(INVALID_NUMBER) - 1);
