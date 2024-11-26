@@ -3,6 +3,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 #include "pop3Parser.h"
 
@@ -197,8 +198,13 @@ fail:
     }
 }
 
-void initMaildir(const char* directory) {
-    mailDirectory = strdup(directory);
+void initPOP3Config(struct pop3Config config) {
+    mkdir(config.maildir, 0755);
+    mailDirectory = strdup(config.maildir);
+
+    for (unsigned int i = 0; i < config.nusers; i++) {
+        addUser(config.users[i].name, config.users[i].pass, config.users[i].role);
+    }
 }
 
 //------------------------------------- Generic handler (just to support pipelining)-------------------------

@@ -5,8 +5,16 @@
 #include "../serverUtils.h"
 #include "../core/selector.h"
 #include "../core/transaction.h"
+#include "../args.h"
 
 #define ATTACHMENT(key) ((clientData *)(key->data))
+
+typedef struct pop3Config {
+    const char *    maildir;
+    bool            transformation_enabled;
+    struct users    users[MAX_USERS];
+    unsigned nusers;
+} pop3Config;
 
 extern char * mailDirectory;
 
@@ -29,7 +37,7 @@ enum states_from_stm {
 
 //--------------------------------------------- Public Functions -------------------------------------------------------
 
-void initMaildir(const char * directory);
+void initPOP3Config(struct pop3Config config);
 void pop3PassiveAccept(struct selector_key* key);
 void freeClientData(struct clientData** clientData);
 unsigned writeOnReadyPop3(struct selector_key * key);

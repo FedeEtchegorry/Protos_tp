@@ -48,6 +48,17 @@ int main(const int argc, char** argv) {
 
     parse_args(argc, argv, &args);
 
+    if (args.maildir == NULL) {
+        errMsg = "No maildir specified";
+        goto finally;
+    }
+    const struct pop3Config pop3Config = {
+        .maildir = args.maildir,
+        .nusers = args.nusers,
+        .users = args.users,
+    };
+    initPOP3Config(pop3Config);
+
     if(args.transformation_enabled) {
         setTransformationCommand(args.transformation_command);
     }
@@ -56,19 +67,7 @@ int main(const int argc, char** argv) {
     clientServerConfig.ioWriteBufferSize = DEFAULT_IO_BUFFER_SIZE;
     clientMetrics = serverMetricsCreate(HISTORIC_DATA_FILE, &clientServerConfig.ioReadBufferSize, &clientServerConfig.ioWriteBufferSize);
 
-    for (unsigned int i = 0; i < args.nusers; i++) {
-        addUser(args.users[i].name, args.users[i].pass, args.users[i].role);
-    }
-
-    if (args.maildir == NULL) {
-        errMsg = "No maildir specified";
-        goto finally;
-    }
-
-    initMaildir(args.maildir);
-
     //------------------------- CLIENT: Defino estructura para el socket para soportar IPv6 ----------------------------
-
     struct sockaddr_in6 addr = {0};
     int clientServer = -1;
 
