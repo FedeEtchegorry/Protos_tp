@@ -16,6 +16,10 @@ static char infoToLog[256];
 
 //----------------------------------------Private functions-----------------------------------------
 static user * getUserByUsername(const char* username) {
+
+    if (username == NULL) {
+        return NULL;
+    }
     user * current = users;
     while(current) {
         if(strcmp(username, current->username) == 0) {

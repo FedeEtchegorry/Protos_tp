@@ -52,7 +52,12 @@ static void handlePassword(struct selector_key* key) {
         password = "";
 
     if(!userLogin(data->data.currentUsername, password)) {
-        writeInBuffer(key, true, true, AUTH_FAILED, sizeof(AUTH_FAILED)-1);
+
+        if (isServerBlocked())
+            writeInBuffer(key, true, true, SERVER_BLOCKED, sizeof(SERVER_BLOCKED)-1);
+        else
+            writeInBuffer(key, true, true, AUTH_FAILED, sizeof(AUTH_FAILED)-1);
+
         data->data.currentUsername = NULL;
         return;
     }
