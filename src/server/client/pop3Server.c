@@ -40,6 +40,10 @@ static const struct state_definition stateHandlers[] = {
         .on_write_ready = writeOnReadyPop3,
     },
     {
+        .state = TRANSFORMATION,
+        .on_write_ready = writeOnReadyPop3,
+    },
+    {
         .state = UPDATE,
         .on_arrival = updateOnArrival,
         .on_write_ready=writeOnReadyPop3,
@@ -237,9 +241,15 @@ unsigned writeOnReadyPop3(struct selector_key * key) {
         case TRANSACTION:
           next = TRANSACTION;
           break;
+        case TRANSFORMATION:
+            if (!data->isEmailFinished)
+                return TRANSFORMATION;
+            next = TRANSACTION;
+            break;
         case UPDATE:
           next = DONE;
           break;
+
         case EXIT:
           next = DONE;
             break;

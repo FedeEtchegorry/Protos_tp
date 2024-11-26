@@ -21,8 +21,8 @@
 #include "selector.h"
 
 
-extern server_metrics *clientMetrics;
-extern server_logger *logger;
+extern server_metrics* clientMetrics;
+extern server_logger* logger;
 
 //------------------------------------------------------ Private Functions ---------------------------------------------
 
@@ -32,16 +32,16 @@ extern server_logger *logger;
 void handlePipeRead(struct selector_key* key);
 
 static const fd_handler pipeHandler = {
-    .handle_read = handlePipeRead,  // Función de lectura del pipe
-    .handle_write = NULL,           // No necesitamos manejar escritura
-    .handle_close = NULL,           // No necesitamos manejar cierre
+    .handle_read = handlePipeRead, // Función de lectura del pipe
+    .handle_write = NULL, // No necesitamos manejar escritura
+    .handle_close = NULL, // No necesitamos manejar cierre
 };
 
 
 static int checkNoiseArguments(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
     char message[MAX_AUX_BUFFER_SIZE];
-    char * extraArg = parserGetExtraArg(data->data.parser);
+    char* extraArg = parserGetExtraArg(data->data.parser);
     if (extraArg != NULL) {
         snprintf(message, MAX_AUX_BUFFER_SIZE, "%s: %s", NOISE_ARGUMENTS, extraArg);
         writeInBuffer(key, true, true, message, strlen(message));
@@ -65,8 +65,8 @@ static long int checkEmailNumber(struct selector_key* key, long int* result) {
     clientData* data = ATTACHMENT(key);
     errno = 0;
     char* endPtr;
-    char * arg = parserGetFirstArg(data->data.parser);
-    if(arg == NULL) {
+    char* arg = parserGetFirstArg(data->data.parser);
+    if (arg == NULL) {
         writeInBuffer(key, true, true, MISSING_ARGUMENT, sizeof(MISSING_ARGUMENT) - 1);
         return 4;
     }
@@ -104,7 +104,7 @@ static void handleUIDL(struct selector_key* key) {
         return;
     }
 
-    char * arg = parserGetFirstArg(data->data.parser);
+    char* arg = parserGetFirstArg(data->data.parser);
     if (arg == NULL) {
         writeInBuffer(key, true, false, "", strlen(""));
         for (long int i = 0; i < data->mailCount; i++) {
@@ -116,7 +116,8 @@ static void handleUIDL(struct selector_key* key) {
         }
         sprintf(message, ".");
         writeInBuffer(key, false, false, message, strlen(message));
-    } else {
+    }
+    else {
         long int mail_num;
         if (checkEmailNumber(key, &mail_num) == 0) {
             long unsigned int uidl = data->mails[mail_num - 1]->checksum;
@@ -131,7 +132,7 @@ static void handleList(struct selector_key* key) {
     if (checkNoiseArguments(key))
         return;
     char message[MAX_AUX_BUFFER_SIZE];
-    char * arg = parserGetFirstArg(data->data.parser);
+    char* arg = parserGetFirstArg(data->data.parser);
     if (arg == NULL) {
         unsigned notDeleted = 0;
         for (unsigned i = 0; i < data->mailCount; i++) {
@@ -150,7 +151,8 @@ static void handleList(struct selector_key* key) {
         }
 
         writeInBuffer(key, false, false, ".", 1);
-    } else {
+    }
+    else {
         long int msgNumber;
         if (checkEmailNumber(key, &msgNumber) == 0) {
             snprintf(message, MAX_AUX_BUFFER_SIZE, "%ld %u", msgNumber, data->mails[msgNumber - 1]->size);
@@ -166,31 +168,32 @@ typedef struct {
 } child_process_data;
 
 void handlePipeRead(struct selector_key* key) {
-    // Acceder a la estructura con el pid
-    child_process_data* processData = (child_process_data*)key->data;
-
+    child_process_data* processData = key->data;
+    clientData * clientData = processData->key->data;
     char buffer[MAX_SIZE_TRANSFORMATION_BUFFER];
-    printf("Antes del read\n");
     ssize_t bytesRead = read(processData->pipefd, buffer, sizeof(buffer) - 1);
-    printf("Bytes leidos: %zd,z Buffer: %s\n", bytesRead, buffer);
     if (bytesRead > 0) {
         buffer[bytesRead] = '\0';
-        printf("Se leyeron del buffer %zd bytes: %s\n", bytesRead, buffer);
-        writeInBuffer(key, false, false, buffer, bytesRead);
+        writeInBuffer(processData->key, false, false, buffer, bytesRead);
+        stm_handler_write(&clientData->data.stateMachine, processData->key);
     } else if (bytesRead == 0) {
-        printf("Pipe is empty\n");
-
+        // Termino y me desregistro
+        // No cierro el key->fd ya que es el extremo de lectura del proceso transformador que ya esta cerrado
         if (waitpid(processData->pid, NULL, WNOHANG) > 0) {
-            printf("Proceso hijo ha terminado\n");
+            writeInBuffer(processData->key, false, false, ".", 1);
+            clientData->data.isEmailFinished = true;
+            free(processData->key);
             free(processData);
+            selector_unregister_fd(key->s, key->fd);
         }
-    } else {
+    }
+    else {
         fprintf(stderr, "Error reading from pipe: %s\n", strerror(errno));
     }
 }
 
 
-static void transform(struct selector_key* key, const char *src) {
+static void transform(struct selector_key* key, char* src) {
     int pipefd[2];
 
     // Crear el pipe
@@ -208,17 +211,19 @@ static void transform(struct selector_key* key, const char *src) {
 
     if (pid == 0) {
         // Proceso hijo: redirigir stdout al pipe
-        close(1);  // Cerrar stdout
-        if (dup(pipefd[1]) < 0) {
+        if (dup2(pipefd[1], STDOUT_FILENO) < 0) {
             perror("Error duplicating file descriptor");
             exit(EXIT_FAILURE);
         }
-        close(pipefd[0]);  // No necesitamos el descriptor de lectura
+        close(pipefd[0]);
+        close(pipefd[1]);
+        close(STDIN_FILENO);
 
         // Ejecutar el comando de transformación
         char fullCommand[MAX_SIZE_TRANSFORMATION_CMD];
         snprintf(fullCommand, sizeof(fullCommand), "/bin/%s", getTransformationCommand());
-        char* args[] = {fullCommand, (char*)src, NULL};
+
+        char* args[] = {fullCommand, src, NULL};
         execve(fullCommand, args, NULL);
 
         // Si execve falla
@@ -229,24 +234,17 @@ static void transform(struct selector_key* key, const char *src) {
     // Proceso padre: cerrar el descriptor de escritura del pipe
     close(pipefd[1]);
 
-    clientData * client_data = ATTACHMENT(key);
-
     child_process_data* processData = malloc(sizeof(child_process_data));
     processData->pipefd = pipefd[0];
-    processData->key = key;
+    processData->key = malloc(sizeof(struct selector_key));
+    memcpy(processData->key, key, sizeof (struct selector_key));
     processData->pid = pid;
-
-    //key->data = processData;
-
-    // Definir el manejador de eventos
-
-    key->fd = pipefd[0];  // El descriptor de archivo es el del extremo de lectura
 
     selector_status status = selector_register(key->s, pipefd[0], &pipeHandler, OP_READ, processData);
     if (status != SELECTOR_SUCCESS) {
         fprintf(stderr, "Error registering pipe fd with selector\n");
         close(pipefd[0]);
-        free(processData);  // Liberar memoria
+        free(processData); // Liberar memoria
     }
 }
 
@@ -264,21 +262,8 @@ static void handleRetr(struct selector_key* key) {
         snprintf(auxBuffer, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, data->data.currentUsername,
                  data->mails[msgNumber - 1]->seen ? "cur" : "new", data->mails[msgNumber - 1]->filename);
 
-        if(isTransformationEnabled()){
-            transform(key, auxBuffer);
-        }
-        else
-        {
-            FILE* mail = fopen(auxBuffer, "r");
-            while (fgets(auxBuffer, MAX_AUX_BUFFER_SIZE, mail) != NULL)
-            {
-                auxBuffer[strlen(auxBuffer) - 1] = '\0';
-                writeInBuffer(key, false, false, auxBuffer, strlen(auxBuffer));
-            }
-            fclose(mail);
-        }
-
-        writeInBuffer(key, false, false, ".", 1);
+        data->data.isEmailFinished=false;
+        transform(key, auxBuffer);
 
         if (data->mails[msgNumber - 1]->seen == false) {
             data->mails[msgNumber - 1]->seen = true;
@@ -338,7 +323,7 @@ static void handleUnknown(struct selector_key* key) {
 
 static void handleAddUser(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    char * arg = parserGetFirstArg(data->data.parser);
+    char* arg = parserGetFirstArg(data->data.parser);
     if (arg == NULL) {
         writeInBuffer(key, true, true, NEW_USER_ARGUMENT_REQUIRED, sizeof(NEW_USER_ARGUMENT_REQUIRED) - 1);
         return;
@@ -366,7 +351,7 @@ static void handleBlock(struct selector_key* key, bool block) {
 
 static void handleSudo(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    char * arg = parserGetFirstArg(data->data.parser);
+    char* arg = parserGetFirstArg(data->data.parser);
     if (arg == NULL) {
         writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
         return;
@@ -425,10 +410,10 @@ static void handleData(struct selector_key* key) {
 }
 
 static void handlerGetLog(struct selector_key* key) {
-	clientData* data = ATTACHMENT(key);
+    clientData* data = ATTACHMENT(key);
     char buffer[1024];
     unsigned long lines = 0;
-	unsigned long bytesWritten = 0;
+    unsigned long bytesWritten = 0;
 
     if (logger == NULL) {
         bytesWritten = snprintf(buffer, sizeof(buffer), "Logs are disabled\n");
@@ -436,64 +421,61 @@ static void handlerGetLog(struct selector_key* key) {
     else {
         buffer[0] = '\n';
 
-        char * arg = parserGetFirstArg(data->data.parser);
+        char* arg = parserGetFirstArg(data->data.parser);
         if (arg) {
-        	lines = strtol(arg, NULL, 10);
+            lines = strtol(arg, NULL, 10);
         }
-    	bytesWritten = serverLoggerRetrieve(logger, buffer+1, sizeof(buffer)-1, &lines) + 1;
+        bytesWritten = serverLoggerRetrieve(logger, buffer + 1, sizeof(buffer) - 1, &lines) + 1;
     }
     writeInBuffer(key, true, false, buffer, bytesWritten);
 }
 
 static void handlerEnableLog(struct selector_key* key) {
-
-	clientData* data = ATTACHMENT(key);
+    clientData* data = ATTACHMENT(key);
 
     char buffer[128];
     unsigned long enable = 0;
-	unsigned long bytesWritten = 0;
+    unsigned long bytesWritten = 0;
 
-    char * arg = parserGetFirstArg(data->data.parser);
+    char* arg = parserGetFirstArg(data->data.parser);
     if (arg) {
-
         enable = strtol(arg, NULL, 10);
 
         if (enable == 0 && logger == NULL) {
-          	bytesWritten = snprintf(buffer, sizeof(buffer), "Logs already disabled\n");
+            bytesWritten = snprintf(buffer, sizeof(buffer), "Logs already disabled\n");
         }
         else if (enable == 0) {
-          	snprintf(buffer, sizeof(buffer), "Logs beeing disabled by '%s'", data->data.currentUsername);
+            snprintf(buffer, sizeof(buffer), "Logs beeing disabled by '%s'", data->data.currentUsername);
             serverLoggerRegister(logger, buffer);
-          	serverLoggerTerminate(&logger);
-          	bytesWritten = snprintf(buffer, sizeof(buffer), "Logs disabled\n");
+            serverLoggerTerminate(&logger);
+            bytesWritten = snprintf(buffer, sizeof(buffer), "Logs disabled\n");
         }
         else if (logger != NULL) {
-          	bytesWritten = snprintf(buffer, sizeof(buffer), "Logs already enabled\n");
+            bytesWritten = snprintf(buffer, sizeof(buffer), "Logs already enabled\n");
         }
         else {
-			logger = serverLoggerCreate(&key->s, LOG_DATA_FILE);
+            logger = serverLoggerCreate(&key->s, LOG_DATA_FILE);
 
             if (logger != NULL) {
-            	snprintf(buffer, sizeof(buffer), "Logs enabled by '%s'\n", data->data.currentUsername);
+                snprintf(buffer, sizeof(buffer), "Logs enabled by '%s'\n", data->data.currentUsername);
                 serverLoggerRegister(logger, buffer);
             }
             else {
                 bytesWritten = snprintf(buffer, sizeof(buffer), "I was not enable, sorry\n");
-        	}
+            }
         }
     }
     else {
-      	strcpy(buffer, MISSING_ARGUMENT);
+        strcpy(buffer, MISSING_ARGUMENT);
         bytesWritten = sizeof(MISSING_ARGUMENT) - 1;
     }
 
     writeInBuffer(key, true, false, buffer, bytesWritten);
 }
 
-static void handlerEnableTransformation(struct selector_key* key)
-{
+static void handlerEnableTransformation(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    char * arg = parserGetFirstArg(data->data.parser);
+    char* arg = parserGetFirstArg(data->data.parser);
 
     if (arg == NULL) {
         writeInBuffer(key, true, true, INVALID_TRANSFORMATION_ARGUMENT, sizeof(INVALID_TRANSFORMATION_ARGUMENT) - 1);
@@ -501,33 +483,27 @@ static void handlerEnableTransformation(struct selector_key* key)
     }
 
     size_t num = strtol(arg, NULL, 10);
-    if(num != 0 && num != 1)
-    {
+    if (num != 0 && num != 1) {
         writeInBuffer(key, true, true, INVALID_TRANSFORMATION_ARGUMENT, sizeof(INVALID_TRANSFORMATION_ARGUMENT) - 1);
         return;
     }
 
-    if(num == 1)
-    {
-        if(!setTransformationEnabled(true))
-        {
+    if (num == 1) {
+        if (!setTransformationEnabled(true)) {
             writeInBuffer(key, true, true, ERROR_SET_TRANSF_FIRST, sizeof(ERROR_SET_TRANSF_FIRST) - 1);
         }
     }
-    else
-    {
+    else {
         setTransformationEnabled(false);
     }
     writeInBuffer(key, true, false, NULL, 0);
 }
 
-static void handleSetTransformation(struct selector_key* key)
-{
+static void handleSetTransformation(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    char * arg = parserGetFirstArg(data->data.parser);
+    char* arg = parserGetFirstArg(data->data.parser);
 
-    if(arg == NULL)
-    {
+    if (arg == NULL) {
         writeInBuffer(key, true, true, MISSING_ARGUMENT, sizeof(MISSING_ARGUMENT) - 1);
         return;
     }
@@ -537,17 +513,17 @@ static void handleSetTransformation(struct selector_key* key)
         writeInBuffer(key, true, false, NULL, 0);
         break;
     case ERR_NULL_COMMAND:
-        writeInBuffer(key, true, true, TRANSFORM_ERR_NULL_COMMAND, sizeof(TRANSFORM_ERR_NULL_COMMAND)-1);
+        writeInBuffer(key, true, true, TRANSFORM_ERR_NULL_COMMAND, sizeof(TRANSFORM_ERR_NULL_COMMAND) - 1);
         break;
     case ERR_COMMAND_TOO_LONG:
-        writeInBuffer(key, true, true, TRANSFORM_ERR_COMMAND_TOO_LONG, sizeof(TRANSFORM_ERR_COMMAND_TOO_LONG)-1);
+        writeInBuffer(key, true, true, TRANSFORM_ERR_COMMAND_TOO_LONG, sizeof(TRANSFORM_ERR_COMMAND_TOO_LONG) - 1);
         break;
 
     case ERR_EMPTY_COMMAND:
-        writeInBuffer(key, true, true, TRANSFORM_ERR_EMPTY_COMMAND, sizeof(TRANSFORM_ERR_EMPTY_COMMAND)-1);
+        writeInBuffer(key, true, true, TRANSFORM_ERR_EMPTY_COMMAND, sizeof(TRANSFORM_ERR_EMPTY_COMMAND) - 1);
         break;
     default:
-        writeInBuffer(key, true, true, TRANSFORM_ERR_INVALID_PATH, sizeof(TRANSFORM_ERR_INVALID_PATH)-1);
+        writeInBuffer(key, true, true, TRANSFORM_ERR_INVALID_PATH, sizeof(TRANSFORM_ERR_INVALID_PATH) - 1);
         break;
     }
 }
@@ -648,6 +624,8 @@ unsigned transactionOnReadReady(struct selector_key* key) {
         break;
     case RETR:
         handleRetr(key);
+        if (isTransformationEnabled())
+            return TRANSFORMATION;
         break;
     case RSET:
         handleRset(key);
