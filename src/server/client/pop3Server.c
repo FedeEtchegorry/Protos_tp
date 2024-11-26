@@ -237,12 +237,9 @@ unsigned writeOnReadyPop3(struct selector_key * key) {
         case TRANSACTION:
           next = TRANSACTION;
           break;
-        case UPDATE:
+        case UPDATE | EXIT:
           next = DONE;
           break;
-        case EXIT:
-          next = DONE;
-            break;
         default:
             return ERROR;
         }
