@@ -22,6 +22,6 @@ void serverLoggerTerminate(server_logger **serverLogger);
 
 void serverLoggerRegister(server_logger *serverLogger, char *stringData);
 
-unsigned long serverLoggerRetrieve(server_logger *serverLogger, char *string, unsigned long maxBytes, unsigned long lines);
+unsigned long serverLoggerRetrieve(server_logger *serverLogger, char *string, unsigned long maxBytes, unsigned long *lines);
 
 #endif // LOGGER_H

@@ -8,16 +8,18 @@
 #include <dirent.h>
 #include <errno.h>
 #include <pthread.h>
+#include "users.h"
 #include "../parserUtils.h"
 #include "../client/pop3Server.h"
 #include "../client/pop3Parser.h"
 #include "../manager/managerServer.h"
 #include "../manager/managerParser.h"
-#include "users.h"
 #include "../logging/metrics.h"
+#include "../logging/logger.h"
 #include <sys/wait.h>
 
 extern server_metrics *clientMetrics;
+extern server_logger *logger;
 
 //------------------------------------------------------ Private Functions ---------------------------------------------
 
@@ -28,13 +30,22 @@ static int checkNoiseArguments(struct selector_key* key){
   clientData* data = ATTACHMENT(key);
   char message[MAX_AUX_BUFFER_SIZE];
   if (data->data.parser.arg2 != NULL) {
-    snprintf(message, MAX_AUX_BUFFER_SIZE, "%s %s", NOISE_ARGUMENTS, data->data.parser.arg2);
+    snprintf(message, MAX_AUX_BUFFER_SIZE, "%s: %s", NOISE_ARGUMENTS, data->data.parser.arg2);
     writeInBuffer(key, true, true, message, strlen(message));
     return 1;
   }
   return 0;
 }
-
+static void handleCapa(struct selector_key* key){
+  char method[MAX_AUX_BUFFER_SIZE];
+  snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "Capability list follows");
+  writeInBuffer(key, true, false, method, strlen(method));
+  snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "UIDL");
+  writeInBuffer(key, false, false, method, strlen(method));
+  snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "PIPELINING");
+  writeInBuffer(key, false, false, method, strlen(method));
+  writeInBuffer(key, false, false, ".", strlen("."));
+}
 
 static long int checkEmailNumber(struct selector_key* key, long int * result) {
     clientData* data = ATTACHMENT(key);
@@ -57,6 +68,45 @@ static long int checkEmailNumber(struct selector_key* key, long int * result) {
     return 0;
 }
 
+static long long unsigned int generateUIDL(const char *filename) {
+
+    unsigned long long hash = 932280971;
+
+    for (const char *ptr = filename; *ptr; ptr++) {
+        hash = (hash * 31) + (unsigned char)*ptr;
+    }
+
+    return hash*strlen(filename);
+}
+
+static void handleUIDL(struct selector_key* key) {
+    clientData *data = ATTACHMENT(key);
+    char message[MAX_AUX_BUFFER_SIZE];
+    if (checkNoiseArguments(key)){
+        return;
+    }
+    if (data->data.parser.arg == NULL) {
+        writeInBuffer(key, true, false, "", strlen(""));
+        for (long int i = 0; i < data->mailCount; i++) {
+          if (!(data->mails[i]->deleted)) {
+            long long unsigned int uidl = data->mails[i]->checksum;
+            sprintf(message, "%li %llu", i+1, uidl);
+            writeInBuffer(key, false, false, message, strlen(message));
+          }
+        }
+        sprintf(message, ".");
+        writeInBuffer(key, false, false, message, strlen(message));
+        return;
+    }
+    if (data->data.parser.arg != NULL) {
+        long int mail_num = strtol(data->data.parser.arg, NULL, 10);
+        if (checkEmailNumber(key, &mail_num) == 0) {
+          long unsigned int uidl = data->mails[mail_num-1]->checksum;
+          sprintf(message, "%ld %lu", mail_num, uidl);
+          writeInBuffer(key, true, false, message, strlen(message));
+        }
+    }
+}
 
 static void handleList(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
@@ -320,6 +370,63 @@ static void handleData(struct selector_key* key){
     }
 }
 
+static void handlerGetLog(struct selector_key* key) {
+
+	clientData* data = ATTACHMENT(key);
+    char buffer[1024];
+    unsigned long lines = 0;
+	unsigned long bytesWritten = 0;
+
+    if (logger == NULL) {
+        snprintf(buffer, sizeof(buffer), "Logs are disabled\n");
+    }
+    else {
+        buffer[0] = '\n';
+
+        if (data->data.parser.arg) {
+        	lines = strtol(data->data.parser.arg, NULL, 10);
+        }
+    	bytesWritten = serverLoggerRetrieve(logger, buffer+1, sizeof(buffer)-1, &lines) + 1;
+    }
+    writeInBuffer(key, true, false, buffer, bytesWritten);
+}
+
+static void handlerEnableLog(struct selector_key* key) {
+
+	clientData* data = ATTACHMENT(key);
+
+    char buffer[128];
+    unsigned long enable = 0;
+	unsigned long bytesWritten = 0;
+
+    if (data->data.parser.arg) {
+
+        enable = strtol(data->data.parser.arg, NULL, 10);
+
+        if (enable == 0 && logger == NULL) {
+          	bytesWritten = snprintf(buffer, sizeof(buffer), "Logs already disabled\n");
+        }
+        else if (enable == 0) {
+          	snprintf(buffer, sizeof(buffer), "Logs beeing disabled by '%s'", data->data.currentUsername);
+            serverLoggerRegister(logger, buffer);
+          	serverLoggerTerminate(&logger);
+          	bytesWritten = snprintf(buffer, sizeof(buffer), "Logs disabled\n");
+        }
+        else if (logger != NULL) {
+          	bytesWritten = snprintf(buffer, sizeof(buffer), "Logs already enabled\n");
+        }
+        else {
+
+        }
+    }
+    else {
+        strcpy(buffer, ERROR_MSG);
+        bytesWritten = sizeof(ERROR_MSG) - 1;
+    }
+
+    writeInBuffer(key, true, false, buffer, bytesWritten);
+}
+
 //--------------------------------------- Aux functions ----------------------------------------------------------------
 
 static size_t calculateOctetLength(const char* filePath) {
@@ -390,6 +497,7 @@ static void loadMails(clientData* data) {
             info->size = calculateOctetLength(mailPath);
             info->seen = (i == 1);
             info->deleted = false;
+            info->checksum= generateUIDL(info->filename);
 
             data->mails[data->mailCount++] = info;
         }
@@ -430,6 +538,12 @@ unsigned transactionOnReadReady(struct selector_key* key) {
         break;
     case QUIT:
         return UPDATE;
+    case CAPA:
+        handleCapa(key);
+        break;
+    case UIDL:
+        handleUIDL(key);
+        break;
     default:
         handleUnknown(key);
     }
@@ -462,6 +576,12 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
         break;
     case RST:
         handlerRst(key);
+        break;
+    case LOGG:
+        handlerGetLog(key);
+        break;
+    case ENLOG:
+        handlerEnableLog(key);
         break;
     case QUIT_M:
         return MANAGER_EXIT;

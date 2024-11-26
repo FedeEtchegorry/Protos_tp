@@ -1,9 +1,11 @@
 #include "logger.h"
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 
 #define LOGGER_BUFFER_SIZE        8096
 #define FILE_PERMISSIONS 		 (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
@@ -23,7 +25,6 @@ static void serverLoggerWrite(server_logger *serverLogger) {
 
     if (written == toBeWritten) {
         buffer_compact(&serverLogger->buffer);
-        DEBUG_PRINT_LOCATION();
     }
 }
 
@@ -79,7 +80,7 @@ server_logger *serverLoggerCreate(fd_selector *selector, char *loggerFilePath) {
     uint8_t *bufferData = malloc(serverLogger->bufferSize);
     buffer_init(&serverLogger->buffer, serverLogger->bufferSize, bufferData);
 
-    serverLogger->loggerFd = loggerFilePath == NULL ? -1 : open(loggerFilePath, O_WRONLY | O_APPEND | O_CREAT, FILE_PERMISSIONS);
+    serverLogger->loggerFd = loggerFilePath == NULL ? -1 : open(loggerFilePath, O_WRONLY | O_APPEND | O_CREAT | O_NONBLOCK, FILE_PERMISSIONS);
 
     if (serverLogger->loggerFd > 0) {
         serverLogger->loggerFilePath = loggerFilePath;
@@ -112,15 +113,36 @@ void serverLoggerRegister(server_logger *serverLogger, char *stringData) {
     if (serverLogger == NULL) {
         return;
     }
+    time_t times = time(NULL);
+    struct tm localTime = *localtime(&times);
+
     size_t maxBytes = serverLogger->buffer.limit - serverLogger->buffer.write;
-    size_t toBeWritten = snprintf((char*)serverLogger->buffer.write, maxBytes, "[OUTPUT] %s\n", stringData);
+    size_t toBeWritten = snprintf(	(char*)serverLogger->buffer.write,
+                                  	maxBytes,
+                                  	"[INFO] %02d/%02d/%02d %02d:%02d:%02d | %s",
+                                  	localTime.tm_year + 1900,
+                                  	localTime.tm_mon + 1,
+                                  	localTime.tm_mday,	// Raro que dia no necesite un +1
+                                  	localTime.tm_hour,
+                                  	localTime.tm_min,
+                                  	localTime.tm_min,
+                                  	stringData
+                                  );
+
+    if (toBeWritten && serverLogger->buffer.write[toBeWritten-1] != '\n') {
+      	if (toBeWritten < maxBytes) {
+          	toBeWritten++;
+    	}
+        serverLogger->buffer.write[toBeWritten-1] = '\n';
+    }
+
     buffer_write_adv(&serverLogger->buffer, toBeWritten);
     serverLoggerWrite(serverLogger);
 }
 
-unsigned long serverLoggerRetrieve(server_logger *serverLogger, char *stringData, unsigned long maxBytes, unsigned long lines) {
+unsigned long serverLoggerRetrieve(server_logger *serverLogger, char *stringData, unsigned long maxBytes, unsigned long *lines) {
     // Este es bloqueante, se usa solo bajo demanda de comando; mantener al minimo
-    if (serverLogger == NULL || stringData == NULL || lines == 0) {
+    if (serverLogger == NULL || stringData == NULL || lines == NULL) {
         return 0;
     }
     int fd = open(serverLogger->loggerFilePath, O_RDONLY);
@@ -137,7 +159,11 @@ unsigned long serverLoggerRetrieve(server_logger *serverLogger, char *stringData
     long totalBytes = 0;
     long offset = lseek(fd, 0, SEEK_END);
 
-    while (offset > 0 && totalLines < lines) {
+    if (*lines == 0) {
+    	*lines = LOG_RETRIEVE_MAX_LINES;
+    }
+
+    while (offset > 0 && totalLines < *lines) {
 		// Leer de atrás para adelante el archivo
         size_t chunkSize = sizeof(buffer);
 
@@ -151,12 +177,12 @@ unsigned long serverLoggerRetrieve(server_logger *serverLogger, char *stringData
             break;
         }
 
-        for (index = bytesRead - 1; index >= 0 && totalLines < lines; index--) {
+        for (index = bytesRead - 1; index >= 0 && totalLines < *lines; index--) {
           	// Procesar el bloque de atrás hacia adelante
             if (buffer[index] == '\n' && index != bytesRead - 1) {
                 totalLines++;
             }
-            if (totalLines <= lines && totalBytes < maxBytes - 1 && index != bytesRead - 1) {
+            if (totalLines <= *lines && totalBytes < maxBytes - 1 && index != bytesRead - 1) {
                 stringData[totalBytes] = buffer[index];
                 totalBytes++;
             }
@@ -173,5 +199,5 @@ unsigned long serverLoggerRetrieve(server_logger *serverLogger, char *stringData
 
 	stringData[totalBytes] = '\0';
 
-    return totalLines;
+    return totalBytes;
 }

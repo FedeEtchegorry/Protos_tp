@@ -177,7 +177,10 @@ int main(const int argc, char** argv) {
         goto finally;
     }
 
-    logger = serverLoggerCreate(&selector, LOG_DATA_FILE); // Ahora que tengo selector creo el logger
+    #if LOG_DEFAULT_ENABLED == 1
+        logger = serverLoggerCreate(&selector, LOG_DATA_FILE); // Ahora que tengo selector creo el logger
+        serverLoggerRegister(logger, "STARTUP");
+    #endif
 
     //----------------------------- CLIENT: Registro a mi socket pasivo para que acepte conexiones ---------------------
 
@@ -253,7 +256,11 @@ finally:
 
     serverMetricsRecordInFile(clientMetrics);
     serverMetricsFree(&clientMetrics);
-    serverLoggerTerminate(&logger);
+
+    if (log) {
+        serverLoggerRegister(logger, "SHUTDOWN");
+        serverLoggerTerminate(&logger);
+    }
 
     return ret;
 }

@@ -13,6 +13,7 @@ enum methods {
   RSET,
   NOOP,
   CAPA,
+  UIDL,
   QUIT,
   UNKNOWN
 };

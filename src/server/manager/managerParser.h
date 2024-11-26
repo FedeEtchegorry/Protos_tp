@@ -15,6 +15,8 @@ enum manager_methods {
   SHOW,
   DATA,
   CAPA_M,
+  LOGG,
+  ENLOG,
   QUIT_M,
   UNKNOWN_M
 };

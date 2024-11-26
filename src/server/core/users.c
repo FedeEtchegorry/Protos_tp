@@ -5,10 +5,14 @@
 
 #include "../serverConfigs.h"
 #include "../logging/metrics.h"
+#include "../logging/logger.h"
 
 extern server_metrics *clientMetrics;
+extern server_logger *logger;
+
 static user * users = NULL;
 static int usersCount = 0;
+static char infoToLog[256];
 
 //----------------------------------------Private functions-----------------------------------------
 static user * getUserByUsername(const char* username) {
@@ -76,7 +80,12 @@ bool addUser(const char* username, const char* password, const unsigned int role
 
     newUser->role = role;
     usersCount++;
+
+    snprintf(infoToLog, sizeof(infoToLog), "New user '%s' has been created", username);
+    serverLoggerRegister(logger, infoToLog);
+
     serverMetricsRecordNewUser(clientMetrics);
+
     return true;
 }
 
@@ -86,6 +95,9 @@ bool makeUserAdmin(const char *username) {
     if(maybeUser != NULL)
     {
         maybeUser->role = ROLE_ADMIN;
+        snprintf(infoToLog, sizeof(infoToLog), "User '%s' has been promoted to Admin", username);
+        serverLoggerRegister(logger, infoToLog);
+
         return true;
     }
     return false;
@@ -94,8 +106,12 @@ bool makeUserAdmin(const char *username) {
 
 bool userLogin(const char* username, const char* password) {
     user * maybeLoggedUser = getUserByUsername(username);
-    if(maybeLoggedUser == NULL || strcmp(maybeLoggedUser->password, password) != 0 || isServerBlocked())
+    if (maybeLoggedUser == NULL || strcmp(maybeLoggedUser->password, password) != 0 || isServerBlocked())
         return false;
+
+    snprintf(infoToLog, sizeof(infoToLog), "User '%s' has logged", username);
+    serverLoggerRegister(logger, infoToLog);
+
     return true;
 }
 

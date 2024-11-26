@@ -8,6 +8,7 @@ typedef struct mailInfo {
     unsigned size;
     bool deleted;
     bool seen;
+    long long unsigned int checksum;
 } mailInfo;
 
 void transactionOnArrival(const unsigned int state, struct selector_key *key);
