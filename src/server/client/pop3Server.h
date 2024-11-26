@@ -39,7 +39,6 @@ enum states_from_stm {
 
 void initPOP3Config(struct pop3Config config);
 void pop3PassiveAccept(struct selector_key* key);
-void freeClientData(struct clientData** clientData);
 unsigned writeOnReadyPop3(struct selector_key * key);
 unsigned readOnReadyPop3(struct selector_key * key);
 

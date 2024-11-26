@@ -61,7 +61,6 @@ static const struct state_definition stateHandlers[] = {
 //----------------------------------- Struct to storage relevant info for each client in selectorKey -------------------
 
 clientData* newClientData(const struct sockaddr_storage clientAddress) {
-
     clientData* clientData = calloc(1, sizeof(struct clientData));
 
     clientData->data.stateMachine.initial = GREETINGS;
@@ -78,7 +77,6 @@ clientData* newClientData(const struct sockaddr_storage clientAddress) {
     buffer_init(&clientData->data.writeBuffer, clientServerConfig.ioWriteBufferSize, writeBuffer);
 
     const methodsMap *map = getPop3Methods();
-
     clientData->data.parser = parserInit(map);
 
     clientData->data.currentUsername = NULL;
@@ -90,22 +88,17 @@ clientData* newClientData(const struct sockaddr_storage clientAddress) {
     return clientData;
 }
 
-void freeClientData(struct clientData** clientData) {
-
-    if (clientData == NULL || *clientData == NULL) {
-        return;
+static void freeClientData(struct clientData* clientData) {
+    if (clientData->data.currentUsername != NULL)
+        free(clientData->data.currentUsername);
+    for (unsigned i =0; i<clientData->mailCount; i++) {
+        free(clientData->mails[i]->filename);
+        free(clientData->mails[i]);
     }
-    struct clientData *oldClientData = *clientData;
-    *clientData = NULL;
-
-    if ((*clientData)->data.readBuffer.data != NULL) {
-        free(oldClientData->data.readBuffer.data);
-        oldClientData->data.readBuffer.data = NULL;
-    }
-    if ((*clientData)->data.writeBuffer.data != NULL) {
-        free(oldClientData->data.writeBuffer.data);
-        oldClientData->data.writeBuffer.data = NULL;
-    }
+    parserDestroy(clientData->data.parser);
+    free(clientData->data.readBuffer.data);
+    free(clientData->data.writeBuffer.data);
+    free(clientData);
 }
 
 //------------------------------ Passive Socket ------------------------------------------------------------------------
@@ -115,15 +108,11 @@ static void pop3_done(struct selector_key* key) {
     if (data->closed)
         return;
     data->closed = true;
+
     selector_unregister_fd(key->s, key->fd);
     close(key->fd);
 
-    if (data->currentUsername!=NULL)
-        free(data->currentUsername);
-    parserDestroy(data->parser);
-    free(data->readBuffer.data);
-    free(data->writeBuffer.data);
-    free(data);
+    freeClientData(key->data);
 }
 void pop3_read(struct selector_key* key){
     struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
@@ -195,7 +184,7 @@ fail:
         // Registrar con matrics el FAIL
     }
     if (clientData != NULL) {
-        freeClientData(&clientData);
+        freeClientData(clientData);
     }
 }
 
