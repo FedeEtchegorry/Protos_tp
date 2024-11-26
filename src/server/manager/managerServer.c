@@ -62,7 +62,7 @@ managerData * newManagerData(const struct sockaddr_storage managerAddress) {
   buffer_init(&managerData->manager_data.readBuffer, BUFFER_SIZE, readBuffer);
   buffer_init(&managerData->manager_data.writeBuffer, BUFFER_SIZE, writeBuffer);
   const methodsMap * map = getManagerMethods();
-  parserInit(&managerData->manager_data.parser, map);
+  managerData->manager_data.parser = parserInit(map);
   managerData->manager_data.currentUsername = NULL;
   managerData->manager_data.isAuth = false;
   managerData->manager_data.closed = false;
@@ -171,7 +171,7 @@ unsigned readOnReadyManager(struct selector_key * key) {
       next = transactionManagerOnReadReady(key);
       break;
     }
-    resetParser(&data->manager_data.parser);
+    resetParser(data->manager_data.parser);
     selector_set_interest_key(key, OP_WRITE);
     return next;
   }

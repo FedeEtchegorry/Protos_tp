@@ -33,7 +33,7 @@ static void handleCapa(struct selector_key* key){
 
 static void handleUsername(struct selector_key* key) {
     userData * data = ATTACHMENT_USER(key);
-    const char* username = data->parser.arg;
+    const char* username = parserGetFirstArg(data->parser);
     if (username == NULL)
         username = "";
 
@@ -51,11 +51,11 @@ static void handlePassword(struct selector_key* key) {
         return;
     }
 
-    const char* password = data->data.parser.arg;
+    const char* password = parserGetFirstArg(data->data.parser);
     if(password == NULL)
         password = "";
 
-    if(!userLogin(data->data.currentUsername, data->data.parser.arg)) {
+    if(!userLogin(data->data.currentUsername, password)) {
         writeInBuffer(key, true, true, AUTH_FAILED, sizeof(AUTH_FAILED)-1);
         data->data.currentUsername = NULL;
         return;
@@ -71,13 +71,13 @@ static void handlePasswordAdmin(struct selector_key* key) {
         return;
     }
 
-    const char* password = data->manager_data.parser.arg;
+    const char* password = parserGetFirstArg(data->manager_data.parser);
     if(password == NULL)
         password = "";
 
 
 
-    if(!userLoginAdmin(data->manager_data.currentUsername, data->manager_data.parser.arg)) {
+    if(!userLoginAdmin(data->manager_data.currentUsername, password)) {
         writeInBuffer(key, true, true, AUTH_FAILED, sizeof(AUTH_FAILED)-1);
         data->manager_data.currentUsername = NULL;
         return;
@@ -99,7 +99,7 @@ void authOnArrival(const unsigned state, struct selector_key* key) {
 
 unsigned authOnReadReady(struct selector_key* key) {
     userData * data = ATTACHMENT_USER(key);
-    switch (data->parser.method) {
+    switch (parserGetMethod(data->parser)) {
         case USER:
             handleUsername(key);
             break;
@@ -119,7 +119,7 @@ unsigned authOnReadReady(struct selector_key* key) {
 
 unsigned authOnReadReadyAdmin(struct selector_key* key) {
     userData * data = ATTACHMENT_USER(key);
-    switch (data->parser.method) {
+    switch (parserGetMethod(data->parser)) {
     case USER_M:
             handleUsername(key);
             break;
