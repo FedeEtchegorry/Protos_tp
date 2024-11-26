@@ -158,18 +158,18 @@ static void transform(struct selector_key* key, const char * src){
         perror("Error al crear el pipe");
     }
 
-    if (pid == 0){
+    if (pid == 0) {
         close(1); // cierra stdout
-        dup(pipefd[1]); // duplica extremo de escritura en pipe en el de stdout
+        int dupResult = dup(pipefd[1]); // duplica extremo de escritura en pipe en el de stdout
         close(pipefd[0]);   // cierra extremo de lectura en pipe
-
-        char fullCommand[256];
-        snprintf(fullCommand, sizeof(fullCommand), "/bin/%s", getTransformationCommand());
-        char* args[] = {fullCommand, (char*)src, NULL};
-        execve(fullCommand, args, NULL);
-
-        perror("Error al ejecutar el comando de transformación");
-        exit(EXIT_FAILURE);
+        if (dupResult >= 0) {
+            char fullCommand[256];
+            snprintf(fullCommand, sizeof(fullCommand), "/bin/%s", getTransformationCommand());
+            char* args[] = {fullCommand, (char*)src, NULL};
+            execve(fullCommand, args, NULL);
+        }
+    perror("Error al ejecutar el comando de transformación");
+    exit(EXIT_FAILURE);
     }
 
     close(pipefd[1]);

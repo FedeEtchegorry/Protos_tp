@@ -12,7 +12,7 @@
 typedef struct pop3Config {
     const char *    maildir;
     bool            transformation_enabled;
-    struct users    users[MAX_USERS];
+    struct users * users;
     unsigned nusers;
 } pop3Config;
 
@@ -39,7 +39,6 @@ enum states_from_stm {
 
 void initPOP3Config(struct pop3Config config);
 void pop3PassiveAccept(struct selector_key* key);
-void freeClientData(struct clientData** clientData);
 unsigned writeOnReadyPop3(struct selector_key * key);
 unsigned readOnReadyPop3(struct selector_key * key);
 

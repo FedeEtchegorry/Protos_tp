@@ -161,7 +161,6 @@ unsigned readOnReadyManager(struct selector_key * key) {
   managerData * data = ATTACHMENT_MANAGER(key);
   bool isFinished = readAndParse(key);
   if (isFinished) {
-    printf("Entrando a read finished de MANAGER\n");
     unsigned next = UNKNOWN;
     switch (stm_state(&data->manager_data.stateMachine)) {
     case MANAGER_AUTHORIZATION:
