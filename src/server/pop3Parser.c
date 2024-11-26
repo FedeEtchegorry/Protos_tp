@@ -11,10 +11,38 @@
 
 #define BUFFER_SIZE 255
 
-void parserInit(pop3Parser * parser) {
+enum state {
+    READING,
+    READY,
+};
+
+typedef struct pop3Parser {
+    enum state state;
+    bool isCRLF;
+
+    enum methods method;
+    char * arg;
+
+    buffer buffer;
+} pop3Parser;
+
+pop3Parser * parserInit() {
+    pop3Parser * parser = malloc(sizeof(pop3Parser));
     uint8_t * auxBuffer = malloc(BUFFER_SIZE);
     buffer_init(&parser->buffer, BUFFER_SIZE, auxBuffer);
+
+    parser->isCRLF = false;
+    parser->arg = NULL;
     parser->state = READING;
+    parser->method = UNKNOWN;
+    return parser;
+}
+
+void parserDestroy(pop3Parser * parser) {
+    if (parser->arg != NULL)
+        free(parser->arg);
+    free(parser->buffer.data);
+    free(parser);
 }
 
 static void processBuffer(pop3Parser * parser) {
@@ -61,7 +89,6 @@ static void processBuffer(pop3Parser * parser) {
         parser->method = QUIT;
     else
         parser->method = UNKNOWN;
-
 
     if (argument != NULL)
         parser->arg = strdup(argument);
@@ -112,16 +139,22 @@ bool parserIsFinished(pop3Parser * parser) {
 
 void resetParser(pop3Parser * parser) {
     buffer_reset(&parser->buffer);
+
     if (parser->arg != NULL)
         free(parser->arg);
     parser->arg = NULL;
+
     parser->isCRLF = false;
     parser->method = UNKNOWN;
     parser->state = READING;
 }
 
-void parserDestroy(pop3Parser * parser) {
-	free(parser->arg);
+
+enum methods parserGetMethod(pop3Parser *parser) {
+    return parser->method;
+}
+char * parserGetArg(pop3Parser *parser) {
+    return parser->arg;
 }
 
 

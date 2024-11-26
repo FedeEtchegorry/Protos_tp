@@ -17,26 +17,15 @@ enum methods {
   UNKNOWN
 };
 
-enum state {
-  READING,
-  READY,
-};
+typedef struct pop3Parser pop3Parser;
 
-typedef struct pop3Parser {
-  enum state state;
-
-  bool isCRLF;
-
-  enum methods method;
-  char * arg;
-
-  buffer buffer;
-} pop3Parser;
-
-void parserInit(pop3Parser * parser);
+enum methods parserGetMethod(pop3Parser *parser);
+char * parserGetArg(pop3Parser *parser);
+pop3Parser * parserInit();
 bool parserIsFinished(pop3Parser * parser);
 void resetParser(pop3Parser * parser);
 void parse(pop3Parser * parser, buffer * buffer);
 void parse_feed(pop3Parser * parser, uint8_t c);
+void parserDestroy(pop3Parser * parser);
 
 #endif //AUTH_H

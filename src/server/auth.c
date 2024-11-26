@@ -8,11 +8,10 @@
 #include "users.h"
 
 
-
 //---------------------------------Private definitions-------------------------------
 static void handleUsername(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    const char* username = data->pop3Parser.arg;
+    const char* username = parserGetArg(data->pop3Parser);
     if (username == NULL)
         username = "";
 
@@ -30,11 +29,11 @@ static void handlePassword(struct selector_key* key) {
         return;
     }
 
-    const char* password = data->pop3Parser.arg;
+    const char* password = parserGetArg(data->pop3Parser);
     if(password == NULL)
         password = "";
 
-    if(!userLogin(data->currentUsername, data->pop3Parser.arg)) {
+    if(!userLogin(data->currentUsername, password)) {
         writeInBuffer(key, true, true, AUTH_FAILED, sizeof(AUTH_FAILED)-1);
         data->currentUsername = NULL;
         return;
@@ -55,7 +54,7 @@ void authOnArrival(const unsigned state, struct selector_key* key) {
 
 unsigned authOnReadReady(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    switch (data->pop3Parser.method) {
+    switch (parserGetMethod(data->pop3Parser)) {
         case USER:
             handleUsername(key);
             break;

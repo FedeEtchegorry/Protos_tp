@@ -20,8 +20,9 @@ static long int checkEmailNumber(struct selector_key* key, long int * result) {
     clientData* data = ATTACHMENT(key);
     errno=0;
     char* endPtr;
-    const long int msgNumber = strtol(data->pop3Parser.arg, &endPtr, 10);
-    if (endPtr == data->pop3Parser.arg || *endPtr != '\0' || errno == ERANGE) {
+    char * arg = parserGetArg(data->pop3Parser);
+    const long int msgNumber = strtol(arg, &endPtr, 10);
+    if (endPtr == arg || *endPtr != '\0' || errno == ERANGE) {
         writeInBuffer(key, true, true, INVALID_NUMBER, sizeof(INVALID_NUMBER) - 1);
         return 1;
     }
@@ -40,7 +41,8 @@ static long int checkEmailNumber(struct selector_key* key, long int * result) {
 static void handleList(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
     char message[MAX_AUX_BUFFER_SIZE];
-    if (data->pop3Parser.arg == NULL) {
+    char * arg = parserGetArg(data->pop3Parser);
+    if (arg == NULL) {
         unsigned notDeleted = 0;
         for (unsigned i = 0; i < data->mailCount; i++) {
             if (!data->mails[i]->deleted)
@@ -60,9 +62,6 @@ static void handleList(struct selector_key* key) {
         writeInBuffer(key, false, false, ".", 1);
     }
     else {
-        if (data->pop3Parser.arg == NULL)
-            data->pop3Parser.arg = "";
-
         long int msgNumber;
         if (checkEmailNumber(key, &msgNumber) == 0) {
             snprintf(message, MAX_AUX_BUFFER_SIZE, "%ld %u", msgNumber, data->mails[msgNumber - 1]->size);
@@ -235,7 +234,7 @@ void transactionOnArrival(const unsigned int state, struct selector_key* key) {
 
 unsigned transactionOnReadReady(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    switch (data->pop3Parser.method) {
+    switch (parserGetMethod(data->pop3Parser)) {
     case LIST:
         handleList(key);
         break;

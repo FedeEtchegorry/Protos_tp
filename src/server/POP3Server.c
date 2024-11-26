@@ -40,7 +40,7 @@ static unsigned readOnReady(struct selector_key * key) {
             next= transactionOnReadReady(key);
             break;
         }
-        resetParser(&data->pop3Parser);
+        resetParser(data->pop3Parser);
         selector_set_interest_key(key, OP_WRITE);
         return next;
     }
@@ -127,7 +127,7 @@ clientData* newClientData(const struct sockaddr_storage clientAddress) {
     buffer_init(&clientData->readBuffer, BUFFER_SIZE, readBuffer);
     buffer_init(&clientData->writeBuffer, BUFFER_SIZE, writeBuffer);
 
-    parserInit(&clientData->pop3Parser);
+    clientData->pop3Parser = parserInit();
 
     clientData->currentUsername = NULL;
     clientData->isAuth = false;
@@ -151,6 +151,7 @@ pop3_done(struct selector_key* key) {
     selector_unregister_fd(key->s, key->fd);
     close(key->fd);
 
+    parserDestroy(data->pop3Parser);
     free(data->readBuffer.data);
     free(data->writeBuffer.data);
     free(data);
@@ -277,8 +278,8 @@ bool readAndParse(struct selector_key* key) {
     const ssize_t readCount = recv(key->fd, readBuffer, readLimit, 0);
     buffer_write_adv(&data->readBuffer, readCount);
 
-    while (!parserIsFinished(&data->pop3Parser) && buffer_can_read(&data->readBuffer))
-        parse_feed(&data->pop3Parser, buffer_read(&data->readBuffer));
+    while (!parserIsFinished(data->pop3Parser) && buffer_can_read(&data->readBuffer))
+        parse_feed(data->pop3Parser, buffer_read(&data->readBuffer));
 
-    return parserIsFinished(&data->pop3Parser);
+    return parserIsFinished(data->pop3Parser);
 }

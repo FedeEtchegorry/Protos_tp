@@ -29,7 +29,7 @@ extern char * mailDirectory;
 typedef struct clientData {
     struct state_machine stateMachine;
 
-    pop3Parser pop3Parser;
+    pop3Parser * pop3Parser;
 
     struct sockaddr_storage clientAddress;
 
