@@ -52,13 +52,15 @@ static long int checkEmailNumber(struct selector_key* key, long int * result) {
     return 0;
 }
 
-static unsigned long long int generateUIDL(const char *filename) {
+static long long unsigned int generateUIDL(const char *filename) {
 
-    unsigned long long checksum = 0;
+    unsigned long long hash = 932280971;
+
     for (const char *ptr = filename; *ptr; ptr++) {
-        checksum += *ptr;
+        hash = (hash * 31) + (unsigned char)*ptr;
     }
-    return (long long unsigned int)(checksum*checksum*checksum*strlen(filename));
+
+    return hash*strlen(filename);
 }
 
 static void handleUIDL(struct selector_key* key) {

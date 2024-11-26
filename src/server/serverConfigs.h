@@ -35,7 +35,7 @@
 #define NO_USERNAME                      "No username given"
 #define INVALID_METHOD                   "Invalid method"
 #define MESSAGE_DELETED                  "Message deleted"
-#define NOISE_ARGUMENTS                   "Noise after message number"
+#define NOISE_ARGUMENTS                   "Noise after message number:"
 
 // --------------------------------- MANAGER ---------------------------------------------------------------------------
 
