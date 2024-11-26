@@ -43,7 +43,7 @@ enum states_from_stm_manager {
 
 //--------------------------------------------- Public Functions -------------------------------------------------------
 
-void manager_passive_accept(struct selector_key* key);
+void managerPassiveAccept(struct selector_key* key);
 unsigned writeOnReadyManager(struct selector_key * key);
 unsigned readOnReadyManager(struct selector_key * key);
 #endif // PROTOS_TP_MANAGERSERVER_H

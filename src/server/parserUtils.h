@@ -13,7 +13,7 @@ typedef struct parserCDT * parserADT;
 parserADT parserInit(const methodsMap* methods);
 void parserDestroy(parserADT parser);
 
-void parse_feed(parserADT parser, uint8_t c);
+void parseFeed(parserADT parser, uint8_t c);
 char * parserGetFirstArg(parserADT parser);
 char * parserGetExtraArg(parserADT parser);
 unsigned parserGetMethod(parserADT parser);

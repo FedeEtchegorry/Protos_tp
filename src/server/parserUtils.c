@@ -109,7 +109,7 @@ static void processBuffer(parserADT parser) {
   //printf("Command: %s, Method: %d, Arg: %s, Arg2: %s\n", command, parser->method, parser->arg1 ? parser->arg1 : "(none)", parser->arg2 ? parser->arg2 : "(none)");
 }
 
-void parse_feed(parserADT parser, uint8_t c) {
+void parseFeed(parserADT parser, uint8_t c) {
   buffer_write(&parser->buffer, c);
   if (c == '\r')
     parser->isCRLF = true;

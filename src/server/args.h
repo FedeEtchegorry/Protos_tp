@@ -33,8 +33,7 @@ struct pop3Args {
  * args con defaults o la seleccion humana. Puede cortar
  * la ejecución.
  */
-void 
-parse_args(const int argc, char **argv, struct pop3Args *args);
+void parseArgs(const int argc, char **argv, struct pop3Args *args);
 
 #endif
 

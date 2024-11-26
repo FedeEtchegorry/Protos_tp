@@ -110,7 +110,7 @@ static void freeClientData(struct clientData* clientData) {
 
 //------------------------------ Passive Socket ------------------------------------------------------------------------
 
-static void pop3_done(struct selector_key* key) {
+static void pop3Done(struct selector_key* key) {
     userData * data = ATTACHMENT_USER(key);
     if (data->closed)
         return;
@@ -124,42 +124,42 @@ static void pop3_done(struct selector_key* key) {
 
     freeClientData(key->data);
 }
-void pop3_read(struct selector_key* key){
+void pop3Read(struct selector_key* key){
     struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
     const enum states_from_stm st = stm_handler_read(stm, key);
 
     if (ERROR == st || DONE == st) {
-        pop3_done(key);
+        pop3Done(key);
     }
 }
-void pop3_write(struct selector_key* key){
+void pop3Write(struct selector_key* key){
     struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
     const enum states_from_stm st = stm_handler_write(stm, key);
 
     if (ERROR == st || DONE == st) {
-        pop3_done(key);
+        pop3Done(key);
     }
 }
-void pop3_block(struct selector_key* key){
+void pop3Block(struct selector_key* key){
     struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
     const enum states_from_stm st = stm_handler_block(stm, key);
 
     if (ERROR == st || DONE == st) {
-        pop3_done(key);
+        pop3Done(key);
     }
 }
-void pop3_close(struct selector_key* key) {
+void pop3Close(struct selector_key* key) {
     struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
     stm_handler_close(stm, key);
-    pop3_done(key);
+    pop3Done(key);
 }
 
 
 static fd_handler handler = {
-    .handle_read = pop3_read,
-    .handle_write = pop3_write,
-    .handle_block = pop3_block,
-    .handle_close = pop3_close,
+    .handle_read = pop3Read,
+    .handle_write = pop3Write,
+    .handle_block = pop3Block,
+    .handle_close = pop3Close,
 };
 
 void pop3PassiveAccept(struct selector_key* key) {

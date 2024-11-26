@@ -74,7 +74,7 @@ managerData * newManagerData(const struct sockaddr_storage managerAddress) {
 
 //------------------------------ Passive Socket ------------------------------------------------------------------------
 
-void manager_done(struct selector_key* key) {
+void managerDone(struct selector_key* key) {
   userData * data = ATTACHMENT_USER(key);
   if (data->closed)
     return;
@@ -87,46 +87,46 @@ void manager_done(struct selector_key* key) {
   free(data);
 }
 
-void manager_read(struct selector_key* key) {
+void managerRead(struct selector_key* key) {
   struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
   const enum states_from_stm_manager st = stm_handler_read(stm, key);
 
   if (MANAGER_ERROR == st || MANAGER_DONE == st) {
-    manager_done(key);
+    managerDone(key);
   }
 }
-void manager_write(struct selector_key* key){
+void managerWrite(struct selector_key* key){
   struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
   const enum states_from_stm_manager st = stm_handler_write(stm, key);
 
   if (MANAGER_ERROR == st || MANAGER_DONE == st) {
-    manager_done(key);
+    managerDone(key);
   }
 }
 
-void manager_block(struct selector_key* key) {
+void managerBlock(struct selector_key* key) {
   struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
   const enum states_from_stm_manager st = stm_handler_block(stm, key);
 
   if (MANAGER_ERROR == st || MANAGER_DONE == st) {
-    manager_done(key);
+    managerDone(key);
   }
 }
-void manager_close(struct selector_key* key) {
+void managerClose(struct selector_key* key) {
   struct state_machine* stm = &ATTACHMENT_USER(key)->stateMachine;
   stm_handler_close(stm, key);
-  manager_done(key);
+  managerDone(key);
 }
 
 static fd_handler handler = {
-    .handle_read = manager_read,
-    .handle_write = manager_write,
-    .handle_block = manager_block,
-    .handle_close = manager_close,
+    .handle_read = managerRead,
+    .handle_write = managerWrite,
+    .handle_block = managerBlock,
+    .handle_close = managerClose,
 };
 
 
-void manager_passive_accept(struct selector_key* key) {
+void managerPassiveAccept(struct selector_key* key) {
 
   struct sockaddr_storage manager_addr;
   socklen_t manager_addr_len = sizeof(manager_addr);

@@ -7,8 +7,7 @@
 
 #include "args.h"
 
-static unsigned short
-port(const char* s) {
+static unsigned short port(const char* s) {
     char* end = 0;
     const long sl = strtol(s, &end, 10);
 
@@ -22,8 +21,7 @@ port(const char* s) {
     return sl;
 }
 
-static void
-parseUser(char* s, struct users* user, Role role) {
+static void parseUser(char* s, struct users* user, Role role) {
     char* p = strchr(s, ':');
     if (p == NULL) {
         fprintf(stderr, "password not found\n");
@@ -36,8 +34,7 @@ parseUser(char* s, struct users* user, Role role) {
     user->role = role;
 }
 
-static void
-version(void) {
+static void version(void) {
     fprintf(stderr, "pop3 version 1.0\n"
             "ITBA Protocolos de Comunicación 2024/2 -- Grupo 3\n");
 }
@@ -52,8 +49,7 @@ $ tree .
     └── tmp
 */
 
-static void
-usage(const char* progname) {
+static void usage(const char* progname) {
     fprintf(stderr,
             "Usage: %s [OPTION]...\n"
             "\n"
@@ -71,8 +67,7 @@ usage(const char* progname) {
             progname);
 }
 
-void
-parse_args(const int argc, char** argv, struct pop3Args* args) {
+void parseArgs(const int argc, char** argv, struct pop3Args* args) {
     memset(args, 0, sizeof(*args));
 
     //-------------------------Seteo defaults----------------------------------

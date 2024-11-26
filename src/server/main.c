@@ -48,7 +48,7 @@ int main(const int argc, char** argv) {
     char* errMsg = "?";
     //-------------------------------------
 
-    parse_args(argc, argv, &args);
+    parseArgs(argc, argv, &args);
     if (args.maildir == NULL) {
       args.maildir = getMailDirPath();
     }
@@ -193,7 +193,7 @@ int main(const int argc, char** argv) {
 
     //----------------------------- MANAGER: Registro a mi socket pasivo para que acepte conexiones --------------------
     const fd_handler managerPassiveSocket = {
-        .handle_read = manager_passive_accept,
+        .handle_read = managerPassiveAccept,
         .handle_write = NULL,
         .handle_close = NULL,
     };
