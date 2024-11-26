@@ -46,8 +46,6 @@ int main(const int argc, char** argv) {
     struct pop3Args args;
     selector_status selectorStatus = SELECTOR_SUCCESS;
     char* errMsg = "?";
-    int clientServer = -1;
-    int managerServer = -1;
     //-------------------------------------
 
     parse_args(argc, argv, &args);
@@ -55,13 +53,13 @@ int main(const int argc, char** argv) {
     if (args.maildir == NULL) {
         errMsg = "No maildir specified";
         goto finally;
-    }/*
+    }
     const struct pop3Config pop3Config = {
         .maildir = args.maildir,
         .nusers = args.nusers,
         .users = args.users,
     };
-    initPOP3Config(pop3Config);*/
+    initPOP3Config(pop3Config);
 
     if(args.transformation_enabled) {
         setTransformationCommand(args.transformation_command);
