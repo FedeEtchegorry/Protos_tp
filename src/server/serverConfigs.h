@@ -2,7 +2,7 @@
 #define SERVER_CONFIGS_H
 
 #include <unistd.h>
-
+#include<stdbool.h>
 // ----------------------------------- MAIN ----------------------------------------------------------------------------
 
 #define DEFAULT_PORT                    1080
@@ -36,14 +36,23 @@
 #define INVALID_METHOD                   "Invalid method"
 #define MESSAGE_DELETED                  "Message deleted"
 #define NOISE_ARGUMENTS                   "Noise after message number"
+#define NEW_USER_ARGUMENT_REQUIRED       "Argument required: <username:password>"
+#define ILLEGAL_USERNAME_OR_PASSWORD     "Username and password cannot be empty"
+#define ERROR_ADDING_USER                "Error adding user"
+#define EMPTY_USERNAME_DELETE            "Please provide an username"
+#define ERROR_DELETING_USER              "Error deleting user"
+#define ERROR_BLOCKING_USER              "Error blocking/unblocking user"
+#define ERROR_MAKING_USER_ADMIN          "Error making user admin"
 
 // --------------------------------- MANAGER ---------------------------------------------------------------------------
 
 #define HISTORIC_DATA_FILE               "historic.csv"
+#define LOG_DATA_FILE                    "log.txt"
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 #define DEBUG_PRINT_LOCATION()          fprintf(stdout, "Archivo: %s, Funcion: %s, Linea: %d\n", __FILE__, __func__, __LINE__)
+
 
 typedef struct {
 
@@ -52,4 +61,6 @@ typedef struct {
 
 } server_configuration;
 
+void setServerBlocked(bool block);
+bool isServerBlocked();
 #endif // SERVER_CONFIGS_H

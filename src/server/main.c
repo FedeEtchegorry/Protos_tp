@@ -15,11 +15,13 @@
 #include "./client/pop3Server.h"
 #include "./manager/managerServer.h"
 #include "./logging/metrics.h"
+#include "./logging/logger.h"
 
 static bool done = false;
 
 server_configuration clientServerConfig = {0};
 server_metrics *clientMetrics = NULL;
+server_logger *logger = NULL;
 
 static void sigterm_handler(const int signal) {
 
@@ -38,13 +40,6 @@ int main(const int argc, char** argv) {
     signal(SIGTERM, sigterm_handler);
     signal(SIGINT, sigterm_handler);
 
-    //------------------------- Levantar usuarios ya registrados de un archivo -----------------------------------------
-
-    if (initializeRegisteredUsers() < 0) {
-        fprintf(stderr, "An error has occurred while fetching registered users.\n");
-        return -1;
-    }
-
     //------------------------- Parsear argumentos ---------------------------------------------------------------------
 
     struct pop3Args args;
@@ -53,18 +48,18 @@ int main(const int argc, char** argv) {
 
     parse_args(argc, argv, &args);
 
+    clientServerConfig.ioReadBufferSize = DEFAULT_IO_BUFFER_SIZE;
+    clientServerConfig.ioWriteBufferSize = DEFAULT_IO_BUFFER_SIZE;
+    clientMetrics = serverMetricsCreate(HISTORIC_DATA_FILE, &clientServerConfig.ioReadBufferSize, &clientServerConfig.ioWriteBufferSize);
+
     for (unsigned int i = 0; i < args.nusers; i++) {
-        usersCreate(args.users[i].name, args.users[i].pass, ROLE_USER);
+        addUser(args.users[i].name, args.users[i].pass, args.users[i].role);
     }
 
     if (args.maildir == NULL) {
         errMsg = "No maildir specified";
         goto finally;
     }
-
-    clientServerConfig.ioReadBufferSize = DEFAULT_IO_BUFFER_SIZE;
-    clientServerConfig.ioWriteBufferSize = DEFAULT_IO_BUFFER_SIZE;
-    clientMetrics = serverMetricsCreate(HISTORIC_DATA_FILE, &clientServerConfig.ioReadBufferSize, &clientServerConfig.ioWriteBufferSize);
 
     initMaildir(args.maildir);
 
@@ -178,6 +173,8 @@ int main(const int argc, char** argv) {
         goto finally;
     }
 
+    logger = serverLoggerCreate(&selector, LOG_DATA_FILE); // Ahora que tengo selector creo el logger
+
     //----------------------------- CLIENT: Registro a mi socket pasivo para que acepte conexiones ---------------------
 
     const fd_handler clientPassiveSocket = {
@@ -249,6 +246,10 @@ finally:
     if (managerServer >= 0) {
         close(managerServer);
     }
+
+    serverMetricsRecordInFile(clientMetrics);
+    serverMetricsFree(&clientMetrics);
+    serverLoggerTerminate(&logger);
 
     return ret;
 }

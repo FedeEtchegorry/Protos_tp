@@ -13,6 +13,10 @@
 #include "../client/pop3Parser.h"
 #include "../manager/managerServer.h"
 #include "../manager/managerParser.h"
+#include "users.h"
+#include "../logging/metrics.h"
+
+extern server_metrics *clientMetrics;
 
 //------------------------------------------------------ Private Functions ---------------------------------------------
 
@@ -207,8 +211,94 @@ static void handleUnknown(struct selector_key* key) {
     writeInBuffer(key, true, true, INVALID_COMMAND, sizeof(INVALID_COMMAND) - 1);
 }
 
+static void handleAddUser(struct selector_key * key) {
+    clientData* data = ATTACHMENT(key);
+    if(data->data.parser.arg == NULL) {
+        writeInBuffer(key, true, true, NEW_USER_ARGUMENT_REQUIRED, sizeof(NEW_USER_ARGUMENT_REQUIRED) - 1);
+        return;
+    }
+    char* username = strtok(data->data.parser.arg, ":");
+    char* password = strtok(NULL, ":");
+
+    if(username == NULL || password == NULL) {
+        writeInBuffer(key, true, true, ILLEGAL_USERNAME_OR_PASSWORD, sizeof(ILLEGAL_USERNAME_OR_PASSWORD) - 1);
+        return;
+    }
+
+    if(addUser(username, password, ROLE_USER)) {
+        writeInBuffer(key, true, false, NULL, 0);
+    } else {
+        writeInBuffer(key, true, true, ERROR_ADDING_USER, sizeof(ERROR_ADDING_USER) - 1);
+    }
+}
+
+static void handleBlock(struct selector_key * key, bool block) {
+    setServerBlocked(block);
+    writeInBuffer(key, true, false, NULL, 0);
+}
+
+static void handleSudo(struct selector_key * key) {
+    clientData* data = ATTACHMENT(key);
+    if(data->data.parser.arg == NULL) {
+        writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
+        return;
+    }
+    char* username = data->data.parser.arg;
+
+    if(username == NULL) {
+        writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
+        return;
+    }
+
+    if(makeUserAdmin(username))
+    {
+        writeInBuffer(key, true, false, NULL, 0);
+    }
+    else{
+        writeInBuffer(key, true, true, ERROR_MAKING_USER_ADMIN, sizeof(ERROR_MAKING_USER_ADMIN) - 1);
+    }
+}
+
+
+static void handlerRst(struct selector_key * key) {
+    clientMetrics->totalCountConnections = 0;
+    clientMetrics->totalTransferredBytes = 0;
+    clientMetrics->totalReceivedBytes = 0;
+    writeInBuffer(key, true, false, NULL, 0);
+}
+
 static void handleData(struct selector_key* key){
-    printf("MENSAJE");
+    clientData* data = ATTACHMENT(key);
+    char buffer[1024];
+
+    int bytesWritten = snprintf(buffer, sizeof(buffer),
+        "\nServer Metrics:\n"
+        "-------------------------\n"
+        "Total Count Connections: %zu\n"
+        "Current Connections Count: %zu\n"
+        "Total Transferred Bytes: %zu\n"
+        "Total Received Bytes: %zu\n"
+        "Total Count Users: %zu\n"
+        "IO Read Buffer Size: %zu bytes\n"
+        "IO Write Buffer Size: %zu bytes\n"
+        "Data File Path: %s",
+        clientMetrics->totalCountConnections,
+        clientMetrics->currentConectionsCount,
+        clientMetrics->totalTransferredBytes,
+        clientMetrics->totalReceivedBytes,
+        clientMetrics->totalCountUsers,
+        clientMetrics->ioReadBufferSize ? *clientMetrics->ioReadBufferSize : 0,
+        clientMetrics->ioWriteBufferSize ? *clientMetrics->ioWriteBufferSize : 0,
+        clientMetrics->dataFilePath ? clientMetrics->dataFilePath : "(not set)"
+    );
+
+    if (bytesWritten < 0) {
+        fprintf(stderr, "Error formatting server metrics\n");
+    } else if ((size_t)bytesWritten >= sizeof(buffer)) {
+        fprintf(stderr, "Buffer overflow detected when formatting server metrics\n");
+    } else {
+        writeInBuffer(key, true, false, buffer, bytesWritten);
+    }
 }
 
 //--------------------------------------- Aux functions ----------------------------------------------------------------
@@ -342,7 +432,22 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
     managerData* data = ATTACHMENT_MANAGER(key);
     switch (data->manager_data.parser.method) {
     case DATA:
-        //get_stored_data();
+        handleData(key);
+        break;
+    case ADDUSER:
+        handleAddUser(key);
+        break;
+    case BLOCK:
+        handleBlock(key, true);
+        break;
+    case UNBLOCK:
+        handleBlock(key, false);
+        break;
+    case SUDO:
+        handleSudo(key);
+        break;
+    case RST:
+        handlerRst(key);
         break;
     case QUIT_M:
         return MANAGER_EXIT;
