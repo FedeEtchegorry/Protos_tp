@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 
 bool serverBlocked = false;
@@ -41,4 +42,18 @@ void setTransformationCommand(const char* command){
 
 char * getTransformationCommand(){
   return transformationCommand;
+}
+
+char* getMailDirPath() {
+  static char newPath[2048];
+  char cwd[1023];
+  if (getcwd(cwd, sizeof(cwd)) == NULL) {
+        fprintf(stdout, "getcwd failed");
+        return NULL;
+  }
+  char pathCopy[1024];
+  strncpy(pathCopy, cwd, sizeof(pathCopy) - 1);
+  pathCopy[sizeof(pathCopy) - 1] = '\0';
+  snprintf(newPath, sizeof(newPath), "%s/mailDir", pathCopy);
+  return newPath;
 }

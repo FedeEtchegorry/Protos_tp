@@ -49,10 +49,8 @@ int main(const int argc, char** argv) {
     //-------------------------------------
 
     parse_args(argc, argv, &args);
-
     if (args.maildir == NULL) {
-        errMsg = "No maildir specified";
-        goto finally;
+      args.maildir = getMailDirPath();
     }
     const struct pop3Config pop3Config = {
         .maildir = args.maildir,

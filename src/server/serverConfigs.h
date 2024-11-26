@@ -74,4 +74,5 @@ char * getTransformationCommand();
 bool isTransformationEnabled();
 void setServerBlocked(bool block);
 bool isServerBlocked();
+char* getMailDirPath();
 #endif // SERVER_CONFIGS_H
