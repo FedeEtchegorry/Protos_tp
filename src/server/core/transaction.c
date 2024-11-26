@@ -164,11 +164,13 @@ static void handleList(struct selector_key* key) {
 }
 
 typedef struct {
-    //File descriptor from the pipe created
+    // MsgNumber to move it
+    long msgNumber;
+    // File descriptor from the pipe created
     int pipefd;
-    //Make a copy of the struct of the user selector key
+    // Make a copy of the struct of the user selector key
     struct selector_key* key;
-    //Pid from the transformer process to make waitpid and kill it
+    // Pid from the transformer process to make waitpid and kill it
     int pid;
 } child_process_data;
 
@@ -198,12 +200,23 @@ void handlePipeRead(struct selector_key* key) {
 
         //Cierro el fd de lecutra y libero recursos
         close(processData->pipefd);
+        if (clientData->mails[processData->msgNumber - 1]->seen == false) {
+            clientData->mails[processData->msgNumber - 1]->seen = true;
+            char oldPath[MAX_AUX_BUFFER_SIZE];
+            char newPath[MAX_AUX_BUFFER_SIZE];
+            snprintf(oldPath, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, clientData->data.currentUsername, "new",
+                     clientData->mails[processData->msgNumber - 1]->filename);
+            snprintf(newPath, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, clientData->data.currentUsername, "cur",
+                     clientData->mails[processData->msgNumber - 1]->filename);
+            rename(oldPath, newPath);
+        }
+
         free(processData->key);
         free(processData);
     }
 }
 
-static void transform(struct selector_key* key, char* src) {
+static void transform(struct selector_key* key, long msgNumber, char * src) {
     int pipefd[2];
 
     // Crear el pipe
@@ -247,8 +260,10 @@ static void transform(struct selector_key* key, char* src) {
     child_process_data* processData = malloc(sizeof(child_process_data));
     processData->pipefd = pipefd[0];
     processData->pid = pid;
+    processData->msgNumber = msgNumber;
     processData->key = malloc(sizeof(struct selector_key));
     memcpy(processData->key, key, sizeof(struct selector_key));
+
 
     selector_status status = selector_register(key->s, pipefd[0], &pipeHandler, OP_READ, processData);
     if (status != SELECTOR_SUCCESS) {
@@ -274,18 +289,7 @@ static void handleRetr(struct selector_key* key) {
                  data->mails[msgNumber - 1]->seen ? "cur" : "new", data->mails[msgNumber - 1]->filename);
 
         data->data.isEmailFinished = false;
-        transform(key, auxBuffer);
-
-        if (data->mails[msgNumber - 1]->seen == false) {
-            data->mails[msgNumber - 1]->seen = true;
-            char oldPath[MAX_AUX_BUFFER_SIZE];
-            char newPath[MAX_AUX_BUFFER_SIZE];
-            snprintf(oldPath, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, data->data.currentUsername, "new",
-                     data->mails[msgNumber - 1]->filename);
-            snprintf(newPath, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, data->data.currentUsername, "cur",
-                     data->mails[msgNumber - 1]->filename);
-            rename(oldPath, newPath);
-        }
+        transform(key, msgNumber, auxBuffer);
     }
 }
 
