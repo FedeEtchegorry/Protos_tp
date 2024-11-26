@@ -253,7 +253,6 @@ unsigned writeOnReadyPop3(struct selector_key * key) {
           selector_set_interest_key(key, OP_READ);
           return next;
         }
-        printf("queda algo en el buffer y salto a %d", next);
         jump(&data->stateMachine, next, key);
         selector_set_interest_key(key, OP_READ);
         readOnReadyPop3(key);
