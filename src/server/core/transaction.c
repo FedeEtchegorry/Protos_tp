@@ -169,7 +169,7 @@ static void transform(struct selector_key* key, const char * src){
         int dupResult = dup(pipefd[1]);
         close(pipefd[0]);
         if (dupResult >= 0) {
-            char fullCommand[MAX_SIZE_TRANSFORMATION_CMD];
+            char fullCommand[256];
             snprintf(fullCommand, sizeof(fullCommand), "/bin/%s", getTransformationCommand());
             char* args[] = {fullCommand, (char*)src, NULL};
             execve(fullCommand, args, NULL);
@@ -179,7 +179,7 @@ static void transform(struct selector_key* key, const char * src){
 
     close(pipefd[1]);
 
-    char buffer[MAX_SIZE_TRANSFORMATION_BUFFER];
+    char buffer[150];
     ssize_t bytesRead;
 
     while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer) - 1)) > 0) {
@@ -477,26 +477,10 @@ static void handleSetTransformation(struct selector_key* key)
         writeInBuffer(key, true, true, MISSING_ARGUMENT, sizeof(MISSING_ARGUMENT) - 1);
         return;
     }
-    int result = setTransformationCommand(arg);
-    switch (result) {
-    case SUCCESS:
-        writeInBuffer(key, true, false, NULL, 0);
-        break;
-    case ERR_NULL_COMMAND:
-        writeInBuffer(key, true, true, TRANSFORM_ERR_NULL_COMMAND, sizeof(TRANSFORM_ERR_NULL_COMMAND-1));
-        break;
-    case ERR_COMMAND_TOO_LONG:
-        writeInBuffer(key, true, true, TRANSFORM_ERR_COMMAND_TOO_LONG, sizeof(TRANSFORM_ERR_COMMAND_TOO_LONG-1));
-        break;
-
-    case ERR_EMPTY_COMMAND:
-        writeInBuffer(key, true, true, TRANSFORM_ERR_EMPTY_COMMAND, sizeof(TRANSFORM_ERR_EMPTY_COMMAND-1));
-        break;
-    default:
-        writeInBuffer(key, true, true, TRANSFORM_ERR_INVALID_PATH, sizeof(TRANSFORM_ERR_INVALID_PATH-1));
-        break;
-    }
+    setTransformationCommand(arg);
+    writeInBuffer(key, true, false, NULL, 0);
 }
+
 
 
 //--------------------------------------- Aux functions ----------------------------------------------------------------

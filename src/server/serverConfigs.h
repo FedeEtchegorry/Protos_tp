@@ -16,8 +16,7 @@
 
 #define MAX_USERS                        10
 #define MAX_MAILS                        50
-#define MAX_SIZE_TRANSFORMATION_CMD      256
-#define MAX_SIZE_TRANSFORMATION_BUFFER   2048
+#define MAX_SIZE_TRANSFORMATION_CMD      50
 #define USERS_CSV                        "users.csv"
 #define USERS_MAX_USERNAME_LENGTH        254
 #define USERS_MAX_PASSWORD_LENGTH        254
@@ -50,17 +49,6 @@
 #define INVALID_TRANSFORMATION_ARGUMENT  "Invalid argument. Value must be 0 to disable transformations or 1 to enable them"
 #define ERROR_SET_TRANSF_FIRST           "Cannot enable transformations without setting a command first. Try using 'SETTR <command>' first"
 
-#define SUCCESS 0
-#define ERR_NULL_COMMAND 1
-#define ERR_COMMAND_TOO_LONG 2
-#define ERR_EMPTY_COMMAND 3
-#define ERR_INVALID_PATH 4
-
-#define TRANSFORM_ERR_NULL_COMMAND "ERROR: The transformation command is NULL."
-#define TRANSFORM_ERR_COMMAND_TOO_LONG "ERROR: The transformation command exceeds the maximum allowed length."
-#define TRANSFORM_ERR_EMPTY_COMMAND "ERROR: The transformation command is empty."
-#define TRANSFORM_ERR_INVALID_PATH "ERROR: The transformation command is either nonexistent or not executable."
-
 // --------------------------------- MANAGER ---------------------------------------------------------------------------
 
 #define HISTORIC_DATA_FILE               "historic.csv"
@@ -81,7 +69,7 @@ typedef struct {
 } server_configuration;
 
 bool setTransformationEnabled(bool enabled);
-int setTransformationCommand(const char* command);
+void setTransformationCommand(const char* command);
 char * getTransformationCommand();
 bool isTransformationEnabled();
 void setServerBlocked(bool block);
