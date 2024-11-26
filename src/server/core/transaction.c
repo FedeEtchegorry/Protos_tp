@@ -27,7 +27,7 @@ static int checkNoiseArguments(struct selector_key* key){
   clientData* data = ATTACHMENT(key);
   char message[MAX_AUX_BUFFER_SIZE];
   if (data->data.parser.arg2 != NULL) {
-    snprintf(message, MAX_AUX_BUFFER_SIZE, "%s %s", NOISE_ARGUMENTS, data->data.parser.arg2);
+    snprintf(message, MAX_AUX_BUFFER_SIZE, "%s: %s", NOISE_ARGUMENTS, data->data.parser.arg2);
     writeInBuffer(key, true, true, message, strlen(message));
     return 1;
   }
@@ -56,13 +56,15 @@ static long int checkEmailNumber(struct selector_key* key, long int * result) {
     return 0;
 }
 
-static unsigned long int generateUIDL(const char *filename) {
-    time_t now = time(NULL);
-    unsigned long checksum = 0;
+static long long unsigned int generateUIDL(const char *filename) {
+
+    unsigned long long hash = 932280971;
+
     for (const char *ptr = filename; *ptr; ptr++) {
-        checksum += *ptr;
+        hash = (hash * 31) + (unsigned char)*ptr;
     }
-    return checksum*now;
+
+    return hash*strlen(filename);
 }
 
 static void handleUIDL(struct selector_key* key) {
@@ -75,8 +77,8 @@ static void handleUIDL(struct selector_key* key) {
         writeInBuffer(key, true, false, "", strlen(""));
         for (long int i = 0; i < data->mailCount; i++) {
           if (!(data->mails[i]->deleted)) {
-            long unsigned int uidl = data->mails[i]->checksum;
-            sprintf(message, "%li %lu", i+1, uidl);
+            long long unsigned int uidl = data->mails[i]->checksum;
+            sprintf(message, "%li %llu", i+1, uidl);
             writeInBuffer(key, false, false, message, strlen(message));
           }
         }
