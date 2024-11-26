@@ -62,14 +62,7 @@ static void handlePassword(struct selector_key* key) {
         return;
     }
 
-    if(isConnected(data->data.currentUsername))
-    {
-        writeInBuffer(key, true, true, USER_ALREADY_CONNECTED, sizeof(USER_ALREADY_CONNECTED)-1);
-        return;
-    }
-
     data->data.isAuth=true;
-    userConnected(data->data.currentUsername);
     writeInBuffer(key, true, false, AUTH_SUCCESS, sizeof(AUTH_SUCCESS) - 1);
 }
 static void handlePasswordAdmin(struct selector_key* key) {
@@ -91,14 +84,7 @@ static void handlePasswordAdmin(struct selector_key* key) {
         return;
     }
 
-    if(isConnected(data->manager_data.currentUsername))
-    {
-        writeInBuffer(key, true, true, USER_ALREADY_CONNECTED, sizeof(USER_ALREADY_CONNECTED)-1);
-        return;
-    }
-
     data->manager_data.isAuth=true;
-    userConnected(data->manager_data.currentUsername);
     writeInBuffer(key, true, false, AUTH_SUCCESS, sizeof(AUTH_SUCCESS) - 1);
 }
 

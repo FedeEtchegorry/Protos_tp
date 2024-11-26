@@ -31,36 +31,6 @@ static user * getUserByUsername(const char* username) {
 }
 //---------------------------------------Public functions--------------------------------------------
 
-bool isConnected(const char* username)
-{
-    user * maybeUser = getUserByUsername(username);
-
-    if(maybeUser != NULL && maybeUser->isConnected == true)
-    {
-        return true;
-    }
-    return false;
-}
-
-void userConnected(const char* username)
-{
-    user * maybeUser = getUserByUsername(username);
-    if(maybeUser != NULL)
-    {
-        maybeUser->isConnected = true;
-    }
-}
-
-void userDisconnected(const char* username)
-{
-    user * maybeUser = getUserByUsername(username);
-    if(maybeUser != NULL)
-    {
-        maybeUser->isConnected = false;
-    }
-}
-
-
 bool userExists(const char* username) {
   return getUserByUsername(username) != NULL;
 }
@@ -113,7 +83,6 @@ bool addUser(const char* username, const char* password, const unsigned int role
     strcpy(newUser->username, username);
     strcpy(newUser->password, password);
 
-    newUser->isConnected = false;
     newUser->role = role;
     usersCount++;
 
