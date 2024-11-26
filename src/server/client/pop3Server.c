@@ -227,7 +227,7 @@ unsigned writeOnReadyPop3(struct selector_key * key) {
     userData * data = ATTACHMENT_USER(key);
     bool isFinished = sendFromBuffer(key);
     if (isFinished) {
-        unsigned next = UNKNOWN;
+        unsigned next;
         switch (stm_state(&data->stateMachine)) {
         case GREETINGS:
           next = AUTHORIZATION;
@@ -242,8 +242,11 @@ unsigned writeOnReadyPop3(struct selector_key * key) {
           next = TRANSACTION;
           break;
         case TRANSFORMATION:
-            if (!data->isEmailFinished)
+            if (!data->isEmailFinished) {
+                //wait to transformator process to tell me when there is something to read in buffer
+                selector_set_interest_key(key, OP_NOOP);
                 return TRANSFORMATION;
+            }
             next = TRANSACTION;
             break;
         case UPDATE:

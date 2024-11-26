@@ -162,36 +162,44 @@ static void handleList(struct selector_key* key) {
 }
 
 typedef struct {
-    int pipefd;  // Pipe
-    struct selector_key * key;
+    //File descriptor from the pipe created
+    int pipefd;
+    //Make a copy of the struct of the user selector key
+    struct selector_key* key;
+    //Pid from the transformer process to make waitpid and kill it
     int pid;
 } child_process_data;
 
 void handlePipeRead(struct selector_key* key) {
     child_process_data* processData = key->data;
-    clientData * clientData = processData->key->data;
+    clientData* clientData = processData->key->data;
+    size_t availableSize;
+    buffer_write_ptr(&clientData->data.writeBuffer, &availableSize);
+    if (availableSize > MAX_SIZE_TRANSFORMATION_BUFFER)
+        availableSize = MAX_SIZE_TRANSFORMATION_BUFFER;
     char buffer[MAX_SIZE_TRANSFORMATION_BUFFER];
-    ssize_t bytesRead = read(processData->pipefd, buffer, sizeof(buffer) - 1);
+    ssize_t bytesRead = read(processData->pipefd, buffer, availableSize);
     if (bytesRead > 0) {
-        buffer[bytesRead] = '\0';
         writeInBuffer(processData->key, false, false, buffer, bytesRead);
-        stm_handler_write(&clientData->data.stateMachine, processData->key);
-    } else if (bytesRead == 0) {
-        // Termino y me desregistro
-        // No cierro el key->fd ya que es el extremo de lectura del proceso transformador que ya esta cerrado
-        if (waitpid(processData->pid, NULL, WNOHANG) > 0) {
-            writeInBuffer(processData->key, false, false, ".", 1);
-            clientData->data.isEmailFinished = true;
-            free(processData->key);
-            free(processData);
-            selector_unregister_fd(key->s, key->fd);
-        }
+        selector_set_interest_key(processData->key, OP_WRITE);
     }
-    else {
-        fprintf(stderr, "Error reading from pipe: %s\n", strerror(errno));
+    else if (bytesRead == 0) {
+        // Escribo en el buffer el . final y aviso que termino
+        writeInBuffer(processData->key, false, false, ".", 1);
+        clientData->data.isEmailFinished = true;
+
+        selector_set_interest_key(processData->key, OP_WRITE);
+
+        // Elimino el proceso hijo del estado zombie y me desregistro del selector
+        waitpid(processData->pid, NULL, WNOHANG);
+        selector_unregister_fd(key->s, key->fd);
+
+        //Cierro el fd de lecutra y libero recursos
+        close(processData->pipefd);
+        free(processData->key);
+        free(processData);
     }
 }
-
 
 static void transform(struct selector_key* key, char* src) {
     int pipefd[2];
@@ -236,14 +244,15 @@ static void transform(struct selector_key* key, char* src) {
 
     child_process_data* processData = malloc(sizeof(child_process_data));
     processData->pipefd = pipefd[0];
-    processData->key = malloc(sizeof(struct selector_key));
-    memcpy(processData->key, key, sizeof (struct selector_key));
     processData->pid = pid;
+    processData->key = malloc(sizeof(struct selector_key));
+    memcpy(processData->key, key, sizeof(struct selector_key));
 
     selector_status status = selector_register(key->s, pipefd[0], &pipeHandler, OP_READ, processData);
     if (status != SELECTOR_SUCCESS) {
         fprintf(stderr, "Error registering pipe fd with selector\n");
         close(pipefd[0]);
+        free(processData->key);
         free(processData); // Liberar memoria
     }
 }
@@ -262,7 +271,7 @@ static void handleRetr(struct selector_key* key) {
         snprintf(auxBuffer, MAX_AUX_BUFFER_SIZE, "%s/%s/%s/%s", mailDirectory, data->data.currentUsername,
                  data->mails[msgNumber - 1]->seen ? "cur" : "new", data->mails[msgNumber - 1]->filename);
 
-        data->data.isEmailFinished=false;
+        data->data.isEmailFinished = false;
         transform(key, auxBuffer);
 
         if (data->mails[msgNumber - 1]->seen == false) {
@@ -573,7 +582,8 @@ static void createMaildir(clientData* data) {
 static void loadMails(clientData* data) {
     DIR* dir;
     struct dirent* entry;
-    data->mailCount = 0;
+    if (data->mailCount > 0)
+        return;
 
     const char* subdirs[] = {"new", "cur"};
 
@@ -625,9 +635,7 @@ unsigned transactionOnReadReady(struct selector_key* key) {
         break;
     case RETR:
         handleRetr(key);
-        if (isTransformationEnabled())
-            return TRANSFORMATION;
-        break;
+        return TRANSFORMATION;
     case RSET:
         handleRset(key);
         break;
