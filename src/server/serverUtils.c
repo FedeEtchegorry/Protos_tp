@@ -65,8 +65,8 @@ bool readAndParse(struct selector_key* key) {
 
   serverMetricsRecordBytesReceived(clientMetrics, readCount);
 
-  while (!parserIsFinished(&data->parser) && buffer_can_read(&data->readBuffer))
-    parse_feed(&data->parser, buffer_read(&data->readBuffer));
+  while (!parserIsFinished(data->parser) && buffer_can_read(&data->readBuffer))
+    parse_feed(data->parser, buffer_read(&data->readBuffer));
 
-  return parserIsFinished(&data->parser);
+  return parserIsFinished(data->parser);
 }

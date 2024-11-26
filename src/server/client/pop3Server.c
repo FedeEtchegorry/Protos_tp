@@ -77,7 +77,7 @@ clientData* newClientData(const struct sockaddr_storage clientAddress) {
 
     const methodsMap *map = getPop3Methods();
 
-    parserInit(&clientData->data.parser, map);
+    clientData->data.parser = parserInit(map);
 
     clientData->data.currentUsername = NULL;
     clientData->data.isAuth = false;
@@ -116,6 +116,9 @@ static void pop3_done(struct selector_key* key) {
     selector_unregister_fd(key->s, key->fd);
     close(key->fd);
 
+    if (data->currentUsername!=NULL)
+        free(data->currentUsername);
+    parserDestroy(data->parser);
     free(data->readBuffer.data);
     free(data->writeBuffer.data);
     free(data);
@@ -214,7 +217,7 @@ unsigned readOnReadyPop3(struct selector_key * key) {
           next= transactionOnReadReady(key);
           break;
         }
-        resetParser(&data->parser);
+        resetParser(data->parser);
         selector_set_interest_key(key, OP_WRITE);
         return next;
     }

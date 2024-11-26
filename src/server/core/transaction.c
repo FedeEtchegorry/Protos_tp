@@ -17,41 +17,44 @@
 #include "../logging/metrics.h"
 #include "../logging/logger.h"
 
-extern server_metrics *clientMetrics;
-extern server_logger *logger;
+extern server_metrics* clientMetrics;
+extern server_logger* logger;
 
 //------------------------------------------------------ Private Functions ---------------------------------------------
 
 #define MAX_AUX_BUFFER_SIZE    255
 #define MAX_DIRENT_SIZE        512
 
-static int checkNoiseArguments(struct selector_key* key){
-  clientData* data = ATTACHMENT(key);
-  char message[MAX_AUX_BUFFER_SIZE];
-  if (data->data.parser.arg2 != NULL) {
-    snprintf(message, MAX_AUX_BUFFER_SIZE, "%s: %s", NOISE_ARGUMENTS, data->data.parser.arg2);
-    writeInBuffer(key, true, true, message, strlen(message));
-    return 1;
-  }
-  return 0;
-}
-static void handleCapa(struct selector_key* key){
-  char method[MAX_AUX_BUFFER_SIZE];
-  snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "Capability list follows");
-  writeInBuffer(key, true, false, method, strlen(method));
-  snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "UIDL");
-  writeInBuffer(key, false, false, method, strlen(method));
-  snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "PIPELINING");
-  writeInBuffer(key, false, false, method, strlen(method));
-  writeInBuffer(key, false, false, ".", strlen("."));
+static int checkNoiseArguments(struct selector_key* key) {
+    clientData* data = ATTACHMENT(key);
+    char message[MAX_AUX_BUFFER_SIZE];
+    char * extraArg = parserGetExtraArg(data->data.parser);
+    if (extraArg != NULL) {
+        snprintf(message, MAX_AUX_BUFFER_SIZE, "%s: %s", NOISE_ARGUMENTS, extraArg);
+        writeInBuffer(key, true, true, message, strlen(message));
+        return 1;
+    }
+    return 0;
 }
 
-static long int checkEmailNumber(struct selector_key* key, long int * result) {
+static void handleCapa(struct selector_key* key) {
+    char method[MAX_AUX_BUFFER_SIZE];
+    snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "Capability list follows");
+    writeInBuffer(key, true, false, method, strlen(method));
+    snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "UIDL");
+    writeInBuffer(key, false, false, method, strlen(method));
+    snprintf(method, MAX_AUX_BUFFER_SIZE, "%s", "PIPELINING");
+    writeInBuffer(key, false, false, method, strlen(method));
+    writeInBuffer(key, false, false, ".", strlen("."));
+}
+
+static long int checkEmailNumber(struct selector_key* key, long int* result) {
     clientData* data = ATTACHMENT(key);
-    errno=0;
+    errno = 0;
     char* endPtr;
-    const long int msgNumber = strtol(data->data.parser.arg, &endPtr, 10);
-    if (endPtr == data->data.parser.arg || *endPtr != '\0' || errno == ERANGE) {
+    char * arg = parserGetFirstArg(data->data.parser);
+    const long int msgNumber = strtol(arg, &endPtr, 10);
+    if (endPtr == arg || *endPtr != '\0' || errno == ERANGE) {
         writeInBuffer(key, true, true, INVALID_NUMBER, sizeof(INVALID_NUMBER) - 1);
         return 1;
     }
@@ -67,42 +70,41 @@ static long int checkEmailNumber(struct selector_key* key, long int * result) {
     return 0;
 }
 
-static long long unsigned int generateUIDL(const char *filename) {
-
+static long long unsigned int generateUIDL(const char* filename) {
     unsigned long long hash = 932280971;
 
-    for (const char *ptr = filename; *ptr; ptr++) {
+    for (const char* ptr = filename; *ptr; ptr++) {
         hash = (hash * 31) + (unsigned char)*ptr;
     }
 
-    return hash*strlen(filename);
+    return hash * strlen(filename);
 }
 
 static void handleUIDL(struct selector_key* key) {
-    clientData *data = ATTACHMENT(key);
+    clientData* data = ATTACHMENT(key);
     char message[MAX_AUX_BUFFER_SIZE];
-    if (checkNoiseArguments(key)){
+    if (checkNoiseArguments(key)) {
         return;
     }
-    if (data->data.parser.arg == NULL) {
+
+    char * arg = parserGetFirstArg(data->data.parser);
+    if (arg == NULL) {
         writeInBuffer(key, true, false, "", strlen(""));
         for (long int i = 0; i < data->mailCount; i++) {
-          if (!(data->mails[i]->deleted)) {
-            long long unsigned int uidl = data->mails[i]->checksum;
-            sprintf(message, "%li %llu", i+1, uidl);
-            writeInBuffer(key, false, false, message, strlen(message));
-          }
+            if (!(data->mails[i]->deleted)) {
+                long long unsigned int uidl = data->mails[i]->checksum;
+                sprintf(message, "%li %llu", i + 1, uidl);
+                writeInBuffer(key, false, false, message, strlen(message));
+            }
         }
         sprintf(message, ".");
         writeInBuffer(key, false, false, message, strlen(message));
-        return;
-    }
-    if (data->data.parser.arg != NULL) {
-        long int mail_num = strtol(data->data.parser.arg, NULL, 10);
+    } else {
+        long int mail_num;
         if (checkEmailNumber(key, &mail_num) == 0) {
-          long unsigned int uidl = data->mails[mail_num-1]->checksum;
-          sprintf(message, "%ld %lu", mail_num, uidl);
-          writeInBuffer(key, true, false, message, strlen(message));
+            long unsigned int uidl = data->mails[mail_num - 1]->checksum;
+            sprintf(message, "%ld %lu", mail_num, uidl);
+            writeInBuffer(key, true, false, message, strlen(message));
         }
     }
 }
@@ -112,7 +114,8 @@ static void handleList(struct selector_key* key) {
     if (checkNoiseArguments(key))
         return;
     char message[MAX_AUX_BUFFER_SIZE];
-    if (data->data.parser.arg == NULL) {
+    char * arg = parserGetFirstArg(data->data.parser);
+    if (arg == NULL) {
         unsigned notDeleted = 0;
         for (unsigned i = 0; i < data->mailCount; i++) {
             if (!data->mails[i]->deleted)
@@ -130,11 +133,7 @@ static void handleList(struct selector_key* key) {
         }
 
         writeInBuffer(key, false, false, ".", 1);
-    }
-    else {
-        if (data->data.parser.arg == NULL)
-            data->data.parser.arg = "";
-
+    } else {
         long int msgNumber;
         if (checkEmailNumber(key, &msgNumber) == 0) {
             snprintf(message, MAX_AUX_BUFFER_SIZE, "%ld %u", msgNumber, data->mails[msgNumber - 1]->size);
@@ -150,7 +149,6 @@ static void handleRetr(struct selector_key* key) {
         return;
     long int msgNumber;
     if (checkEmailNumber(key, &msgNumber) == 0) {
-
         snprintf(auxBuffer, MAX_AUX_BUFFER_SIZE, "%u octets", data->mails[msgNumber - 1]->size);
         writeInBuffer(key, true, false, auxBuffer, strlen(auxBuffer));
 
@@ -224,109 +222,106 @@ static void handleUnknown(struct selector_key* key) {
     writeInBuffer(key, true, true, INVALID_COMMAND, sizeof(INVALID_COMMAND) - 1);
 }
 
-static void handleAddUser(struct selector_key * key) {
+static void handleAddUser(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    if(data->data.parser.arg == NULL) {
+    char * arg = parserGetFirstArg(data->data.parser);
+    if (arg == NULL) {
         writeInBuffer(key, true, true, NEW_USER_ARGUMENT_REQUIRED, sizeof(NEW_USER_ARGUMENT_REQUIRED) - 1);
         return;
     }
-    char* username = strtok(data->data.parser.arg, ":");
+    char* username = strtok(arg, ":");
     char* password = strtok(NULL, ":");
 
-    if(username == NULL || password == NULL) {
+    if (username == NULL || password == NULL) {
         writeInBuffer(key, true, true, ILLEGAL_USERNAME_OR_PASSWORD, sizeof(ILLEGAL_USERNAME_OR_PASSWORD) - 1);
         return;
     }
 
-    if(addUser(username, password, ROLE_USER)) {
+    if (addUser(username, password, ROLE_USER)) {
         writeInBuffer(key, true, false, NULL, 0);
-    } else {
+    }
+    else {
         writeInBuffer(key, true, true, ERROR_ADDING_USER, sizeof(ERROR_ADDING_USER) - 1);
     }
 }
 
-static void handleBlock(struct selector_key * key, bool block) {
+static void handleBlock(struct selector_key* key, bool block) {
     setServerBlocked(block);
     writeInBuffer(key, true, false, NULL, 0);
 }
 
-static void handleSudo(struct selector_key * key) {
+static void handleSudo(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    if(data->data.parser.arg == NULL) {
+    char * arg = parserGetFirstArg(data->data.parser);
+    if (arg == NULL) {
         writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
         return;
     }
-    char* username = data->data.parser.arg;
+    char* username = arg;
 
-    if(username == NULL) {
-        writeInBuffer(key, true, true, EMPTY_USERNAME_DELETE, sizeof(EMPTY_USERNAME_DELETE) - 1);
-        return;
-    }
-
-    if(makeUserAdmin(username))
-    {
+    if (makeUserAdmin(username)) {
         writeInBuffer(key, true, false, NULL, 0);
     }
-    else{
+    else {
         writeInBuffer(key, true, true, ERROR_MAKING_USER_ADMIN, sizeof(ERROR_MAKING_USER_ADMIN) - 1);
     }
 }
 
 
-static void handlerRst(struct selector_key * key) {
+static void handlerRst(struct selector_key* key) {
     clientMetrics->totalCountConnections = 0;
     clientMetrics->totalTransferredBytes = 0;
     clientMetrics->totalReceivedBytes = 0;
     writeInBuffer(key, true, false, NULL, 0);
 }
 
-static void handleData(struct selector_key* key){
-    clientData* data = ATTACHMENT(key);
+static void handleData(struct selector_key* key) {
     char buffer[1024];
 
     int bytesWritten = snprintf(buffer, sizeof(buffer),
-        "\nServer Metrics:\n"
-        "-------------------------\n"
-        "Total Count Connections: %zu\n"
-        "Current Connections Count: %zu\n"
-        "Total Transferred Bytes: %zu\n"
-        "Total Received Bytes: %zu\n"
-        "Total Count Users: %zu\n"
-        "IO Read Buffer Size: %zu bytes\n"
-        "IO Write Buffer Size: %zu bytes\n"
-        "Data File Path: %s",
-        clientMetrics->totalCountConnections,
-        clientMetrics->currentConectionsCount,
-        clientMetrics->totalTransferredBytes,
-        clientMetrics->totalReceivedBytes,
-        clientMetrics->totalCountUsers,
-        clientMetrics->ioReadBufferSize ? *clientMetrics->ioReadBufferSize : 0,
-        clientMetrics->ioWriteBufferSize ? *clientMetrics->ioWriteBufferSize : 0,
-        clientMetrics->dataFilePath ? clientMetrics->dataFilePath : "(not set)"
+                                "\nServer Metrics:\n"
+                                "-------------------------\n"
+                                "Total Count Connections: %zu\n"
+                                "Current Connections Count: %zu\n"
+                                "Total Transferred Bytes: %zu\n"
+                                "Total Received Bytes: %zu\n"
+                                "Total Count Users: %zu\n"
+                                "IO Read Buffer Size: %zu bytes\n"
+                                "IO Write Buffer Size: %zu bytes\n"
+                                "Data File Path: %s",
+                                clientMetrics->totalCountConnections,
+                                clientMetrics->currentConectionsCount,
+                                clientMetrics->totalTransferredBytes,
+                                clientMetrics->totalReceivedBytes,
+                                clientMetrics->totalCountUsers,
+                                clientMetrics->ioReadBufferSize ? *clientMetrics->ioReadBufferSize : 0,
+                                clientMetrics->ioWriteBufferSize ? *clientMetrics->ioWriteBufferSize : 0,
+                                clientMetrics->dataFilePath ? clientMetrics->dataFilePath : "(not set)"
     );
 
     if (bytesWritten < 0) {
         fprintf(stderr, "Error formatting server metrics\n");
-    } else if ((size_t)bytesWritten >= sizeof(buffer)) {
+    }
+    else if ((size_t)bytesWritten >= sizeof(buffer)) {
         fprintf(stderr, "Buffer overflow detected when formatting server metrics\n");
-    } else {
+    }
+    else {
         writeInBuffer(key, true, false, buffer, bytesWritten);
     }
 }
 
 static void handlerGetLog(struct selector_key* key) {
-
-	clientData* data = ATTACHMENT(key);
     char buffer[1024];
     unsigned long lines = 0;
-	unsigned long  bytesWritten = 0;
+    unsigned long bytesWritten = 0;
 
     if (logger == NULL) {
         snprintf(buffer, sizeof(buffer), "Logs are disabled\n");
     }
     else {
         buffer[0] = '\n';
-    	bytesWritten = serverLoggerRetrieve(logger, buffer+1, sizeof(buffer)-1, &lines) + 1; // Ahora duro, se deberia pasar por parametro
+        bytesWritten = serverLoggerRetrieve(logger, buffer + 1, sizeof(buffer) - 1, &lines) + 1;
+        // Ahora duro, se deberia pasar por parametro
     }
     writeInBuffer(key, true, false, buffer, bytesWritten);
 }
@@ -360,17 +355,16 @@ static size_t calculateOctetLength(const char* filePath) {
     return octetCount;
 }
 
-static void createMaildir(clientData * data) {
+static void createMaildir(clientData* data) {
     char path[MAX_AUX_BUFFER_SIZE];
     snprintf(path, MAX_AUX_BUFFER_SIZE, "%s/%s", mailDirectory, data->data.currentUsername);
     mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     const char* subdirs[] = {"new", "cur", "tmp"};
-    for (int i=0; i<3 ; i++) {
+    for (int i = 0; i < 3; i++) {
         char subdir[512];
         snprintf(subdir, sizeof(subdir), "%s/%s/%s", mailDirectory, data->data.currentUsername, subdirs[i]);
         mkdir(subdir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
-
 }
 
 static void loadMails(clientData* data) {
@@ -401,7 +395,7 @@ static void loadMails(clientData* data) {
             info->size = calculateOctetLength(mailPath);
             info->seen = (i == 1);
             info->deleted = false;
-            info->checksum= generateUIDL(info->filename);
+            info->checksum = generateUIDL(info->filename);
 
             data->mails[data->mailCount++] = info;
         }
@@ -421,7 +415,7 @@ void transactionOnArrival(const unsigned int state, struct selector_key* key) {
 
 unsigned transactionOnReadReady(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
-    switch (data->data.parser.method) {
+    switch (parserGetMethod(data->data.parser)) {
     case LIST:
         handleList(key);
         break;
@@ -456,13 +450,13 @@ unsigned transactionOnReadReady(struct selector_key* key) {
 
 //------------------------------------------------- Public Functions For Manager ---------------------------------------
 
-void transactionOnArrivalForManager(const unsigned int state, struct selector_key* key){
+void transactionOnArrivalForManager(const unsigned int state, struct selector_key* key) {
     selector_set_interest_key(key, OP_READ);
 }
 
 unsigned transactionManagerOnReadReady(struct selector_key* key) {
     managerData* data = ATTACHMENT_MANAGER(key);
-    switch (data->manager_data.parser.method) {
+    switch (parserGetMethod(data->manager_data.parser)) {
     case DATA:
         handleData(key);
         break;

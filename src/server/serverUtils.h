@@ -11,14 +11,12 @@
 #define ERROR_MSG             "-ERR "
 #define ATTACHMENT_USER(key)  ((userData *)(key->data))
 
-
-
 typedef struct userData {
 
   struct state_machine stateMachine;
   struct sockaddr_storage sockaddrStorage;
 
-  parser parser;
+  parserADT parser;
   buffer readBuffer;
   buffer writeBuffer;
   char * currentUsername;

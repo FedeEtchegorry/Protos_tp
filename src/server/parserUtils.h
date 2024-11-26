@@ -3,33 +3,21 @@
 
 #include "./core/buffer.h"
 
-enum state {
-  READING,
-  READY,
-};
-
 typedef struct {
   const char *command;
   int method;
 } methodsMap;
 
+typedef struct parserCDT * parserADT;
 
-typedef struct parser {
-  char *arg;
-  char *arg2;
-  buffer buffer;
-  const methodsMap *all_methods;
-  int unknown_method;
-  int method;
-  int state;
-  bool isCRLF;
-} parser;
+parserADT parserInit(const methodsMap* methods);
+void parserDestroy(parserADT parser);
 
-void processBuffer(parser *parser);
-void parserInit(parser * parser, const methodsMap* methods);
-void parse_feed(parser * parser, uint8_t c);
-void parse(parser * parser, buffer * buffer);
-void resetParser(parser * parser);
-bool parserIsFinished(parser * parser);
+void parse_feed(parserADT parser, uint8_t c);
+char * parserGetFirstArg(parserADT parser);
+char * parserGetExtraArg(parserADT parser);
+unsigned parserGetMethod(parserADT parser);
+bool parserIsFinished(parserADT parser);
+void resetParser(parserADT parser);
 
 #endif // PROTOS_TP_PARSERUTILS_H
