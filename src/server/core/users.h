@@ -10,8 +10,13 @@ typedef struct user {
     char *password;
     Role role;
     struct user * next;
+    bool isConnected;
 } user;
 
+
+bool isConnected(const char* username);
+void userConnected(const char* username);
+void userDisconnected(const char* username);
 bool addUser(const char* username, const char* password, unsigned int role);
 bool makeUserAdmin(const char *username);
 bool userLogin(const char* username, const char* password);

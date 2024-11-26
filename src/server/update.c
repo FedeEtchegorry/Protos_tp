@@ -34,6 +34,7 @@ void updateOnArrival(const unsigned int state, struct selector_key *key) {
   }
   else writeInBuffer(key, true, false, LOG_OUT, sizeof(LOG_OUT)-1);
 
+  userDisconnected(data->data.currentUsername);
   serverMetricsRecordDropConection(clientMetrics);
   selector_set_interest_key(key, OP_WRITE);
 }
