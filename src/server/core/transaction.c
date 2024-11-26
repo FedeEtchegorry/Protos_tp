@@ -573,6 +573,7 @@ static void createMaildir(clientData* data) {
 static void loadMails(clientData* data) {
     DIR* dir;
     struct dirent* entry;
+    data->mailCount = 0;
 
     const char* subdirs[] = {"new", "cur"};
 
@@ -613,6 +614,7 @@ void transactionOnArrival(const unsigned int state, struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
     createMaildir(data);
     loadMails(data);
+    printf("LA CANTIDAD DE MAILS ES %d", data->mailCount);
     selector_set_interest_key(key, OP_READ);
 }
 
