@@ -63,6 +63,7 @@ usage(const char* progname) {
             "   -p <POP3 port>   Puerto entrante conexiones POP3.\n"
             "   -P <conf port>   Puerto entrante conexiones configuracion\n"
             "   -u <name>:<pass> Usuario y contraseña de usuario que puede usar el servidor. Hasta 10.\n"
+            "   -U <name>:<pass> Usuario y contraseña del admin que puede usar el servidor. Hasta 10.\n"
             "   -v               Imprime información sobre la versión versión y termina.\n"
             "   -d <dir>         Carpeta donde residen los Maildirs\n"
             "   -t <cmd>         Comando para aplicar transformaciones\n"
@@ -101,8 +102,8 @@ parse_args(const int argc, char** argv, struct pop3Args* args) {
             args->mng_addr = optarg;
             break;
         case 't':
-            //TODO fijarse que hacer con el argumento
-            args->transformation_enabled = false;
+            args->transformation_command = optarg;
+            args->transformation_enabled = true;
             break;
         case 'p':
             args->socks_port = port(optarg);
