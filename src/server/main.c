@@ -204,6 +204,8 @@ int main(const int argc, char** argv) {
         .handle_close = NULL,
     };
 
+    access(/bin/cmd, X_OK || F_OK)
+
     selectorStatus = selector_register(selector, managerServer, &managerPassiveSocket, OP_READ, NULL);
 
     if (selectorStatus != SELECTOR_SUCCESS) {

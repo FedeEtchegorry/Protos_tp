@@ -42,10 +42,6 @@ int setTransformationCommand(const char* command) {
         setTransformationEnabled(false);
         return ERR_EMPTY_COMMAND;
     }
-    if (access(command, F_OK) != 0 || access(command, X_OK) != 0) {
-        setTransformationEnabled(false);
-        return ERR_INVALID_PATH;
-    }
 
     strcpy(transformationCommand, command);
     setTransformationEnabled(true);

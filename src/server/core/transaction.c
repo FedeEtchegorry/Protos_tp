@@ -18,6 +18,7 @@
 #include "../logging/logger.h"
 #include <sys/wait.h>
 #include "../serverConfigs.h"
+#include "selector.h"
 
 
 extern server_metrics *clientMetrics;
@@ -27,6 +28,15 @@ extern server_logger *logger;
 
 #define MAX_AUX_BUFFER_SIZE    255
 #define MAX_DIRENT_SIZE        512
+
+void handlePipeRead(struct selector_key* key);
+
+static const fd_handler pipeHandler = {
+    .handle_read = handlePipeRead,  // Función de lectura del pipe
+    .handle_write = NULL,           // No necesitamos manejar escritura
+    .handle_close = NULL,           // No necesitamos manejar cierre
+};
+
 
 static int checkNoiseArguments(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
@@ -149,51 +159,97 @@ static void handleList(struct selector_key* key) {
     }
 }
 
-static void transform(struct selector_key* key, const char * src){
+typedef struct {
+    int pipefd;  // Pipe
+    struct selector_key * key;
+    int pid;
+} child_process_data;
+
+void handlePipeRead(struct selector_key* key) {
+    // Acceder a la estructura con el pid
+    child_process_data* processData = (child_process_data*)key->data;
+
+    char buffer[MAX_SIZE_TRANSFORMATION_BUFFER];
+    printf("Antes del read\n");
+    ssize_t bytesRead = read(processData->pipefd, buffer, sizeof(buffer) - 1);
+    printf("Bytes leidos: %zd,z Buffer: %s\n", bytesRead, buffer);
+    if (bytesRead > 0) {
+        buffer[bytesRead] = '\0';
+        printf("Se leyeron del buffer %zd bytes: %s\n", bytesRead, buffer);
+        writeInBuffer(key, false, false, buffer, bytesRead);
+    } else if (bytesRead == 0) {
+        printf("Pipe is empty\n");
+
+        if (waitpid(processData->pid, NULL, WNOHANG) > 0) {
+            printf("Proceso hijo ha terminado\n");
+            free(processData);
+        }
+    } else {
+        fprintf(stderr, "Error reading from pipe: %s\n", strerror(errno));
+    }
+}
+
+
+static void transform(struct selector_key* key, const char *src) {
     int pipefd[2];
 
+    // Crear el pipe
     if (pipe(pipefd) < 0) {
-        fprintf(stderr, "Error creating pipe\n");
+        perror("Error creating pipe");
+        return;
     }
 
+    // Crear el proceso hijo
     int pid = fork();
-    if(pid < 0)
-    {
-        fprintf(stderr, "Error creating child\n");
+    if (pid < 0) {
+        perror("Error creating child");
+        return;
     }
 
     if (pid == 0) {
-        close(1);
-        int dupResult = dup(pipefd[1]);
-        close(pipefd[0]);
-        if (dupResult >= 0) {
-            char fullCommand[MAX_SIZE_TRANSFORMATION_CMD];
-            snprintf(fullCommand, sizeof(fullCommand), "/bin/%s", getTransformationCommand());
-            char* args[] = {fullCommand, (char*)src, NULL};
-            execve(fullCommand, args, NULL);
+        // Proceso hijo: redirigir stdout al pipe
+        close(1);  // Cerrar stdout
+        if (dup(pipefd[1]) < 0) {
+            perror("Error duplicating file descriptor");
+            exit(EXIT_FAILURE);
         }
+        close(pipefd[0]);  // No necesitamos el descriptor de lectura
+
+        // Ejecutar el comando de transformación
+        char fullCommand[MAX_SIZE_TRANSFORMATION_CMD];
+        snprintf(fullCommand, sizeof(fullCommand), "/bin/%s", getTransformationCommand());
+        char* args[] = {fullCommand, (char*)src, NULL};
+        execve(fullCommand, args, NULL);
+
+        // Si execve falla
+        perror("Execve failed");
         exit(EXIT_FAILURE);
     }
 
+    // Proceso padre: cerrar el descriptor de escritura del pipe
     close(pipefd[1]);
 
-    char buffer[MAX_SIZE_TRANSFORMATION_BUFFER];
-    ssize_t bytesRead;
+    clientData * client_data = ATTACHMENT(key);
 
-    while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer) - 1)) > 0) {
-        buffer[bytesRead] = '\0';
-        writeInBuffer(key, false, false, buffer, bytesRead);
-    }
-    if (bytesRead < 0) {
-        fprintf(stderr, "Error reading from pipe\n");
-    }
+    child_process_data* processData = malloc(sizeof(child_process_data));
+    processData->pipefd = pipefd[0];
+    processData->key = key;
+    processData->pid = pid;
 
-    close(pipefd[0]);
+    //key->data = processData;
 
-    if (waitpid(pid, NULL, 0) < 0) {
-        fprintf(stderr, "Error waiting for child to end\n");
+    // Definir el manejador de eventos
+
+    key->fd = pipefd[0];  // El descriptor de archivo es el del extremo de lectura
+
+    selector_status status = selector_register(key->s, pipefd[0], &pipeHandler, OP_READ, processData);
+    if (status != SELECTOR_SUCCESS) {
+        fprintf(stderr, "Error registering pipe fd with selector\n");
+        close(pipefd[0]);
+        free(processData);  // Liberar memoria
     }
 }
+
 
 static void handleRetr(struct selector_key* key) {
     clientData* data = ATTACHMENT(key);
@@ -481,17 +537,17 @@ static void handleSetTransformation(struct selector_key* key)
         writeInBuffer(key, true, false, NULL, 0);
         break;
     case ERR_NULL_COMMAND:
-        writeInBuffer(key, true, true, TRANSFORM_ERR_NULL_COMMAND, sizeof(TRANSFORM_ERR_NULL_COMMAND-1));
+        writeInBuffer(key, true, true, TRANSFORM_ERR_NULL_COMMAND, sizeof(TRANSFORM_ERR_NULL_COMMAND)-1);
         break;
     case ERR_COMMAND_TOO_LONG:
-        writeInBuffer(key, true, true, TRANSFORM_ERR_COMMAND_TOO_LONG, sizeof(TRANSFORM_ERR_COMMAND_TOO_LONG-1));
+        writeInBuffer(key, true, true, TRANSFORM_ERR_COMMAND_TOO_LONG, sizeof(TRANSFORM_ERR_COMMAND_TOO_LONG)-1);
         break;
 
     case ERR_EMPTY_COMMAND:
-        writeInBuffer(key, true, true, TRANSFORM_ERR_EMPTY_COMMAND, sizeof(TRANSFORM_ERR_EMPTY_COMMAND-1));
+        writeInBuffer(key, true, true, TRANSFORM_ERR_EMPTY_COMMAND, sizeof(TRANSFORM_ERR_EMPTY_COMMAND)-1);
         break;
     default:
-        writeInBuffer(key, true, true, TRANSFORM_ERR_INVALID_PATH, sizeof(TRANSFORM_ERR_INVALID_PATH-1));
+        writeInBuffer(key, true, true, TRANSFORM_ERR_INVALID_PATH, sizeof(TRANSFORM_ERR_INVALID_PATH)-1);
         break;
     }
 }
