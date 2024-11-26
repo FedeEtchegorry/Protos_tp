@@ -253,7 +253,7 @@ finally:
     serverMetricsRecordInFile(clientMetrics);
     serverMetricsFree(&clientMetrics);
 
-    if (log) {
+    if (logger != NULL) {
         serverLoggerRegister(logger, "SHUTDOWN");
         serverLoggerTerminate(&logger);
     }

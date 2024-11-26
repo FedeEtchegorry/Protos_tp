@@ -322,7 +322,7 @@ static void handlerGetLog(struct selector_key* key) {
 	unsigned long bytesWritten = 0;
 
     if (logger == NULL) {
-        snprintf(buffer, sizeof(buffer), "Logs are disabled\n");
+        bytesWritten = snprintf(buffer, sizeof(buffer), "Logs are disabled\n");
     }
     else {
         buffer[0] = '\n';
@@ -360,12 +360,20 @@ static void handlerEnableLog(struct selector_key* key) {
           	bytesWritten = snprintf(buffer, sizeof(buffer), "Logs already enabled\n");
         }
         else {
+			logger = serverLoggerCreate(&key->s, LOG_DATA_FILE);
 
+            if (logger != NULL) {
+            	snprintf(buffer, sizeof(buffer), "Logs enabled by '%s'\n", data->data.currentUsername);
+                serverLoggerRegister(logger, buffer);
+            }
+            else {
+                bytesWritten = snprintf(buffer, sizeof(buffer), "I was not enable, sorry\n");
+        	}
         }
     }
     else {
-        strcpy(buffer, ERROR_MSG);
-        bytesWritten = sizeof(ERROR_MSG) - 1;
+      	strcpy(buffer, MISSING_ARGUMENT);
+        bytesWritten = sizeof(MISSING_ARGUMENT) - 1;
     }
 
     writeInBuffer(key, true, false, buffer, bytesWritten);
