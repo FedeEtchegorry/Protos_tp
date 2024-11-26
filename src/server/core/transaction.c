@@ -8,15 +8,17 @@
 #include <dirent.h>
 #include <errno.h>
 #include <pthread.h>
+#include "users.h"
 #include "../parserUtils.h"
 #include "../client/pop3Server.h"
 #include "../client/pop3Parser.h"
 #include "../manager/managerServer.h"
 #include "../manager/managerParser.h"
-#include "users.h"
 #include "../logging/metrics.h"
+#include "../logging/logger.h"
 
 extern server_metrics *clientMetrics;
+extern server_logger *logger;
 
 //------------------------------------------------------ Private Functions ---------------------------------------------
 
@@ -303,6 +305,23 @@ static void handleData(struct selector_key* key){
     }
 }
 
+static void handlerGetLog(struct selector_key* key) {
+
+	clientData* data = ATTACHMENT(key);
+    char buffer[1024];
+    unsigned long lines = 0;
+	unsigned long  bytesWritten = 0;
+
+    if (logger == NULL) {
+        snprintf(buffer, sizeof(buffer), "Logs are disabled\n");
+    }
+    else {
+        buffer[0] = '\n';
+    	bytesWritten = serverLoggerRetrieve(logger, buffer+1, sizeof(buffer)-1, &lines) + 1; // Ahora duro, se deberia pasar por parametro
+    }
+    writeInBuffer(key, true, false, buffer, bytesWritten);
+}
+
 //--------------------------------------- Aux functions ----------------------------------------------------------------
 
 static size_t calculateOctetLength(const char* filePath) {
@@ -450,6 +469,9 @@ unsigned transactionManagerOnReadReady(struct selector_key* key) {
         break;
     case RST:
         handlerRst(key);
+        break;
+    case LOGG:
+        handlerGetLog(key);
         break;
     case QUIT_M:
         return MANAGER_EXIT;

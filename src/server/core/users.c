@@ -5,8 +5,11 @@
 
 #include "../serverConfigs.h"
 #include "../logging/metrics.h"
+#include "../logging/logger.h"
 
 extern server_metrics *clientMetrics;
+extern server_logger *logger;
+
 static user * users = NULL;
 static int usersCount = 0;
 
@@ -96,6 +99,11 @@ bool userLogin(const char* username, const char* password) {
     user * maybeLoggedUser = getUserByUsername(username);
     if(maybeLoggedUser == NULL || strcmp(maybeLoggedUser->password, password) != 0 || isServerBlocked())
         return false;
+
+    char info[128];
+    snprintf(info, sizeof(info), "User '%s' has logged", username);
+    serverLoggerRegister(logger, info);
+
     return true;
 }
 

@@ -18,6 +18,7 @@
 #include "./logging/logger.h"
 
 static bool done = false;
+static bool log = true;
 
 server_configuration clientServerConfig = {0};
 server_metrics *clientMetrics = NULL;
@@ -173,7 +174,11 @@ int main(const int argc, char** argv) {
         goto finally;
     }
 
-    logger = serverLoggerCreate(&selector, LOG_DATA_FILE); // Ahora que tengo selector creo el logger
+    if (log)
+    {
+        logger = serverLoggerCreate(&selector, LOG_DATA_FILE); // Ahora que tengo selector creo el logger
+        serverLoggerRegister(logger, "STARTUP"); // Meter fecha? Capaz adentro de la funcion de logeo
+    }
 
     //----------------------------- CLIENT: Registro a mi socket pasivo para que acepte conexiones ---------------------
 

@@ -48,7 +48,7 @@
 
 #define HISTORIC_DATA_FILE               "historic.csv"
 #define LOG_DATA_FILE                    "log.txt"
-
+#define LOG_RETRIEVE_MAX_LINES            64
 // ---------------------------------------------------------------------------------------------------------------------
 
 #define DEBUG_PRINT_LOCATION()          fprintf(stdout, "Archivo: %s, Funcion: %s, Linea: %d\n", __FILE__, __func__, __LINE__)
