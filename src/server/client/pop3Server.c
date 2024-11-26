@@ -14,10 +14,13 @@
 #include "../core/stm.h"
 #include "../logging/auth.h"
 #include "../logging/metrics.h"
+#include "../logging/logger.h"
 
 char * mailDirectory = NULL;
 extern server_configuration clientServerConfig;
 extern server_metrics *clientMetrics;
+extern server_logger *logger;
+static char infoToLog[256];
 
 //------------------------------------- Array de estados para la stm ---------------------------------------------------
 
@@ -112,6 +115,9 @@ static void pop3_done(struct selector_key* key) {
     selector_unregister_fd(key->s, key->fd);
     close(key->fd);
 
+    snprintf(infoToLog, sizeof(infoToLog), "User '%s' has exit", data->currentUsername);
+    serverLoggerRegister(logger, infoToLog);
+
     freeClientData(key->data);
 }
 void pop3_read(struct selector_key* key){
@@ -181,7 +187,6 @@ void pop3PassiveAccept(struct selector_key* key) {
 fail:
     if (client != -1) {
         close(client);
-        // Registrar con matrics el FAIL
     }
     if (clientData != NULL) {
         freeClientData(clientData);

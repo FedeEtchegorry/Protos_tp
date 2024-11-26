@@ -41,8 +41,6 @@ void updateOnArrival(const unsigned int state, struct selector_key *key) {
 void exitOnArrival(const unsigned int state, struct selector_key *key){
   writeInBuffer(key, true, false, EXIT_MESSAGE, sizeof(EXIT_MESSAGE)-1);
   clientData * data = ATTACHMENT(key);
-  snprintf(infoToLog, sizeof(infoToLog), "User '%s' has exit", data->data.currentUsername);
-  serverLoggerRegister(logger, infoToLog);
   selector_set_interest_key(key, OP_WRITE);
 }
 
