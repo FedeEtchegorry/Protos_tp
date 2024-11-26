@@ -4,8 +4,6 @@
 #include <string.h>
 #include "../serverConfigs.h"
 
-#define EMPTY_METRIC_LINE_SIZE    7
-
 server_metrics *serverMetricsCreate(char *dataFilePath, const size_t *ioReadBufferSize, const size_t *ioWriteBufferSize) {
 
     server_metrics *serverMetrics = malloc(sizeof(server_metrics));

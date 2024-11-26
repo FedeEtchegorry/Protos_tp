@@ -48,6 +48,8 @@
 #define MISSING_ARGUMENT                 "Missing argument"
 #define INVALID_TRANSFORMATION_ARGUMENT  "Invalid argument. Value must be 0 to disable transformations or 1 to enable them"
 #define ERROR_SET_TRANSF_FIRST           "Cannot enable transformations without setting a command first. Try using 'SETTR <command>' first"
+#define USER_ALREADY_CONNECTED           "Authentication failed. User is already connected"
+#define SERVER_BLOCKED                   "Server blocked"
 
 // --------------------------------- MANAGER ---------------------------------------------------------------------------
 
